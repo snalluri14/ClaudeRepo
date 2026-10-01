@@ -1,7 +1,7 @@
 # Video Script: Quantum-Assisted Emergency Dispatch
-### PanIIT Summit, Vijayawada · Pilot with the Government of Andhra Pradesh (112 / 108 Emergency Response)
+### PanIIT Summit, Vijayawada · Pilot with the Government of Andhra Pradesh (108 Ambulance Pilot · Towards Unified 112)
 
-**Runtime:** about 3 min 15 sec · **Voice-over:** about 430 words at a calm, confident pace (~130 wpm)
+**Runtime:** about 3 min 30 sec · **Voice-over:** about 480 words at a calm, confident pace (~130 wpm)
 **Tone:** human first, then technology, then proof, then vision. Use warm, cinematic music that builds at the results section.
 **Partners on screen:** Government of Andhra Pradesh · Arohak · Quanfluence (quanfluence.com)
 
@@ -9,27 +9,32 @@
 
 ## SCENE 1: The Golden Hour (0:00 – 0:20)
 
-**VISUALS:** Night. Rain on a Guntur street. A phone screen lights up as someone dials **112**. Quick cuts: a worried family, an ambulance's beacon starting up, the clock on a control-room wall.
+**VISUALS:** Night. Rain on a Guntur street. A phone screen lights up as someone dials **108** for an ambulance. Quick cuts: a worried family, an ambulance's beacon starting up, the clock on a control-room wall.
 **ON-SCREEN TEXT:** *Every minute matters.*
 **SFX:** Phone ring, then a heartbeat that slowly fades under the music.
 
 **VOICE-OVER:**
-> When someone in Andhra Pradesh dials 112, a clock starts ticking. For a cardiac arrest, a road accident or a difficult delivery, the minutes between that call and a hospital bed can decide whether a life is saved.
+> When someone in Andhra Pradesh dials 108 for an ambulance, a clock starts ticking. For a cardiac arrest, a road accident or a difficult delivery, the minutes between that call and a hospital bed can decide whether a life is saved.
 
 ---
 
-## SCENE 2: The Problem (0:20 – 0:50)
+## SCENE 2: The Problem (0:20 – 1:00)
 
-**VISUALS:** Animated map of the district with dozens of ambulance, fire and police icons, hospitals and incident pins appearing at the same moment. Lines tangle as conflicting choices pile up.
+**VISUALS:** Three separate phone keypads and control rooms side by side: **108** (ambulance), **100** (police), **101** (fire), each with its own fleet on its own map. They slowly slide together and merge into a single **112** emblem.
+**ON-SCREEN TEXT:** *108 Ambulance · 100 Police · 101 Fire → one number: 112*
+
+Then an animated map of the district with dozens of ambulance, fire and police icons, hospitals and incident pins appearing at the same moment. Lines tangle as conflicting choices pile up.
 **ON-SCREEN TEXT:** *Many incidents · Limited units · District boundaries · Hospital suitability · Live road conditions*
 
 **VOICE-OVER:**
-> Behind every call is a hard decision. Which ambulance should go? Which hospital is right for this patient? Which route through real roads gets them there fastest?
+> Today, emergency help in Andhra Pradesh comes through three numbers: 108 for an ambulance, 100 for police and 101 for fire. Each one has its own control room, its own fleet and its own rules.
+> The Government of Andhra Pradesh is bringing them all together under one number, 112. One call, and every service responds as one.
+> But one number also means a much harder problem. Behind every call is a decision. Which ambulance should go? Which hospital is right for this patient? Which route through real roads gets them there fastest?
 > Traditional dispatch often just picks the "nearest" unit. But when many emergencies happen at once, units are limited, and district boundaries and hospital capabilities all matter, the nearest choice is not always the best one for the whole system.
 
 ---
 
-## SCENE 3: The Idea, Quantum-Assisted Optimization (0:50 – 1:30)
+## SCENE 3: The Idea, Quantum-Assisted Optimization (1:00 – 1:40)
 
 **VISUALS:** The tangled map freezes and turns into a glowing grid of binary 0/1 cells (the QUBO matrix). The cells resolve into clean, colour-coded assignments: ambulance → patient → hospital.
 **ON-SCREEN TEXT:** *Quantum-Assisted Multi-Service Emergency Dispatch & Resource Placement Optimization*
@@ -43,20 +48,20 @@ then *Real road-network travel times + QUBO-based assignment*
 
 ---
 
-## SCENE 4: How It Works in the Real World (1:30 – 2:00)
+## SCENE 4: How It Works in the Real World (1:40 – 2:10)
 
 **VISUALS:** A simple animated flow (taken from the status deck):
 `Existing dispatch system → API integration → Quantum Optimize Solver → Assigned ambulance · Assigned hospital · Optimized route`
 Then a screen recording of the **Route API traffic** dashboard (108.vijayawada.co) showing ambulance, hospital and the "To scene / To hospital" columns.
-**ON-SCREEN TEXT:** *Integrated end to end with the live dispatch system*
+**ON-SCREEN TEXT:** *Integrated end to end with the live 108 ambulance dispatch system*
 
 **VOICE-OVER:**
-> We didn't build this in a lab and leave it there. Working with the Government of Andhra Pradesh, we connected it to the existing emergency dispatch system through APIs.
+> We didn't build this in a lab and leave it there. Working with the Government of Andhra Pradesh, we started with ambulances and connected it to the live 108 dispatch system through APIs.
 > Call and fleet data flow in, and within seconds the solver sends back a complete decision: which ambulance to send, which hospital to go to, and the optimized road route for both legs of the journey, from the ambulance to the patient and from the patient to the hospital.
 
 ---
 
-## SCENE 5: Pilot Results, Guntur District (2:00 – 2:40)
+## SCENE 5: Pilot Results, Guntur District (2:10 – 2:50)
 
 **VISUALS:** Bold animated counters on a clean background, one after another. Old number on the left in grey, new number on the right in bright teal, with a downward arrow.
 
@@ -73,14 +78,14 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 
 **VOICE-OVER:**
 > We ran the pilot in the Guntur region. The system handled 391 live dispatch requests with a 99.2 percent success rate.
-> When we compared it with the existing dispatch on the same day's calls, the results were striking.
+> When we compared it with the existing 108 dispatch on the same day's calls, the results were striking.
 > The average time to reach the scene fell from 22.6 minutes to 9.8.
 > The average time from scene to hospital fell from 37.9 minutes to 7.7.
 > Overall, the projected total response time dropped from about one hour to under eighteen minutes, a reduction of seventy-one percent.
 
 ---
 
-## SCENE 6: Partnership (2:40 – 2:55)
+## SCENE 6: Partnership (2:50 – 3:05)
 
 **VISUALS:** Logos animate in side by side: **Government of Andhra Pradesh**, **Arohak**, **Quanfluence**. Cut to the team at work in the control room.
 **ON-SCREEN TEXT:** *In partnership with Arohak and Quanfluence* · *quanfluence.com*
@@ -90,9 +95,9 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 
 ---
 
-## SCENE 7: The Vision & Close (2:55 – 3:15)
+## SCENE 7: The Vision & Close (3:05 – 3:30)
 
-**VISUALS:** The map zooms out from Guntur to all of Andhra Pradesh, then to India. Ambulance, fire and police icons light up across districts. Final shot: the ambulance from Scene 1 arriving at a hospital and the patient being wheeled in. Fade to title card.
+**VISUALS:** The 112 emblem returns. The map zooms out from Guntur to all of Andhra Pradesh, then to India. Ambulance, fire and police icons light up together across districts, all connected to one 112 hub. Final shot: the ambulance from Scene 1 arriving at a hospital and the patient being wheeled in. Fade to title card.
 **ON-SCREEN TEXT (final card):**
 **Quantum-Assisted Emergency Response**
 *Faster help. Smarter decisions. More lives saved.*
@@ -100,7 +105,7 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 *PanIIT Summit, Vijayawada*
 
 **VOICE-OVER:**
-> Today it's ambulances in Guntur. Tomorrow it can be ambulances, fire and police, planned together across every district, including where to station them before the call ever comes.
+> Today it's 108 ambulances in Guntur. The same model was built for every service, so as Andhra Pradesh brings 108, 100 and 101 together under 112, it can plan ambulances, police and fire engines as one across every district, including where to station them before the call ever comes.
 > Because in an emergency, the best technology is the one that gets help there sooner.
 > Quantum-assisted emergency response, built in Andhra Pradesh, for India.
 
@@ -111,8 +116,8 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 ## Production Notes
 
 1. **Accuracy and claims:** Keep the Scene 5 footnote on screen. The quantum figures are *computed/expected* route times without boarding or handover buffer, so the voice-over says "projected" for the total. Don't drop that word.
-2. **108 vs 112:** 112 is the unified emergency number and 108 is the ambulance service whose data was used. The script uses "112" for the citizen-facing story and "108" in the data footnote. Confirm the preferred wording with the AP government contact.
+2. **108 / 100 / 101 → 112:** Today, 108 (ambulance), 100 (police) and 101 (fire) run as separate call centres. The AP government is merging them under 112. The pilot ran on 108 ambulance data, so the results are presented as a 108 pilot. 112 is shown as the unified future the multi-service model is built for. Don't imply that 112 is already live for all services unless the government confirms it.
 3. **Screen captures to use:** the Route API traffic dashboard (summary cards: 391 total / 388 succeeded / 99.2%) and the route table with To-Scene / To-Hospital columns. Blur any patient-identifying or precise location data before showing it publicly.
 4. **Optional local touch:** Open Scene 1 with a short Telugu greeting such as "నమస్కారం" in the voice-over, or add Telugu subtitles for the Vijayawada audience.
-5. **Shorter cut (~90 sec):** Use Scenes 1, 3 (first two lines only), 5, 6 and 7. Keep the partner credit.
+5. **Shorter cut (~90 sec):** Use Scenes 1, 2 (first two lines only), 3 (first two lines only), 5, 6 and 7. Keep the partner credit.
 6. **Partner credits:** The script credits Arohak and Quanfluence. The status deck also names Quurium and NTRVST as validating teams. Confirm whether they should appear on screen too.
