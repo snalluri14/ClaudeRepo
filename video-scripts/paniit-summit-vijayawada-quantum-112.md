@@ -3,7 +3,7 @@
 
 **Runtime:** about 3 min 15 sec · **Voice-over:** about 430 words at a calm, confident pace (~130 wpm)
 **Tone:** human first, then technology, then proof, then vision. Use warm, cinematic music that builds at the results section.
-**Partners on screen:** Arohak · Quurium · NTRVST · Government of Andhra Pradesh
+**Partners on screen:** Government of Andhra Pradesh · Arohak · Quanfluence (quanfluence.com)
 
 ---
 
@@ -80,13 +80,13 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 
 ---
 
-## SCENE 6: Partnership & Validation (2:40 – 2:55)
+## SCENE 6: Partnership (2:40 – 2:55)
 
-**VISUALS:** Logos animate in side by side: **Government of Andhra Pradesh**, **Arohak**, **Quurium**, **NTRVST**. Cut to the team at work in the control room.
-**ON-SCREEN TEXT:** *Validated jointly by the Arohak, Quurium and NTRVST teams*
+**VISUALS:** Logos animate in side by side: **Government of Andhra Pradesh**, **Arohak**, **Quanfluence**. Cut to the team at work in the control room.
+**ON-SCREEN TEXT:** *In partnership with Arohak and Quanfluence* · *quanfluence.com*
 
 **VOICE-OVER:**
-> This was a joint effort. The integration and results were validated together by the Arohak, Quurium and NTRVST teams, working alongside the state's emergency response teams.
+> This project was delivered in partnership with Arohak and Quanfluence, working hand in hand with the Government of Andhra Pradesh and its emergency response teams.
 
 ---
 
@@ -96,7 +96,8 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 **ON-SCREEN TEXT (final card):**
 **Quantum-Assisted Emergency Response**
 *Faster help. Smarter decisions. More lives saved.*
-*Pilot with the Government of Andhra Pradesh · PanIIT Summit, Vijayawada*
+*Pilot with the Government of Andhra Pradesh · In partnership with Arohak and Quanfluence*
+*PanIIT Summit, Vijayawada*
 
 **VOICE-OVER:**
 > Today it's ambulances in Guntur. Tomorrow it can be ambulances, fire and police, planned together across every district, including where to station them before the call ever comes.
@@ -113,4 +114,5 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 2. **108 vs 112:** 112 is the unified emergency number and 108 is the ambulance service whose data was used. The script uses "112" for the citizen-facing story and "108" in the data footnote. Confirm the preferred wording with the AP government contact.
 3. **Screen captures to use:** the Route API traffic dashboard (summary cards: 391 total / 388 succeeded / 99.2%) and the route table with To-Scene / To-Hospital columns. Blur any patient-identifying or precise location data before showing it publicly.
 4. **Optional local touch:** Open Scene 1 with a short Telugu greeting such as "నమస్కారం" in the voice-over, or add Telugu subtitles for the Vijayawada audience.
-5. **Shorter cut (~90 sec):** Use Scenes 1, 3 (first two lines only), 5 and 7.
+5. **Shorter cut (~90 sec):** Use Scenes 1, 3 (first two lines only), 5, 6 and 7. Keep the partner credit.
+6. **Partner credits:** The script credits Arohak and Quanfluence. The status deck also names Quurium and NTRVST as validating teams. Confirm whether they should appear on screen too.
