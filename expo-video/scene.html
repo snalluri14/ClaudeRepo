@@ -1,0 +1,471 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#081120}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080;
+const ctx = document.getElementById('c').getContext('2d');
+const F = '"Liberation Sans", "DejaVu Sans", "Noto Color Emoji", sans-serif';
+
+const C = {
+  bg: '#081120', bg2: '#0E1B33', grid: '#16264A', text: '#F2F6FC', dim: '#9AACC8',
+  accent: '#3DD6F5', gold: '#F5B83D', police: '#4D8DFF', fire: '#FF5A4E', amb: '#3DDC84',
+};
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+
+// scene envelope: fade in 0.6s, fade out 0.6s
+function env(t, a, b, f = 0.6) { return Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b)); }
+
+function text(str, x, y, { size = 48, color = C.text, weight = 'bold', align = 'center', alpha = 1, base = 'middle' } = {}) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px ${F}`; ctx.textAlign = align; ctx.textBaseline = base;
+  ctx.fillText(str, x, y); ctx.restore();
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+// caption bar: the silent-friendly narration line
+function caption(str, alpha, sub) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(4,10,22,0.88)'; rrect(110, 930, 1700, sub ? 128 : 104, 18); ctx.fill();
+  ctx.fillStyle = C.accent; ctx.fillRect(110, 948, 8, sub ? 92 : 68);
+  text(str, 960, sub ? 972 : 982, { size: 44 });
+  if (sub) text(sub, 960, 1028, { size: 30, color: C.dim, weight: 'normal' });
+  ctx.restore();
+}
+function headline(str, alpha, sub) {
+  text(str, 960, 92, { size: 62, alpha });
+  if (sub) text(sub, 960, 150, { size: 32, color: C.accent, weight: 'normal', alpha });
+}
+function brandTag(alpha) {
+  text('AROHAK', 60, 48, { size: 26, color: C.accent, align: 'left', alpha: alpha * 0.9 });
+  text('TECHNOLOGIES', 178, 48, { size: 26, color: C.dim, weight: 'normal', align: 'left', alpha: alpha * 0.9 });
+}
+
+// ---------- shared data: illustrative city ----------
+const MAP = { x: 90, y: 200, w: 1240, h: 690 };
+const TYPES = {
+  P: { color: C.police, icon: '🚓', name: 'Police' },
+  F: { color: C.fire, icon: '🚒', name: 'Fire' },
+  A: { color: C.amb, icon: '🚑', name: 'Ambulance' },
+};
+const incidents = [
+  { label: 'Road accident', needs: ['P', 'A'], x: .22, y: .30 },
+  { label: 'House fire', needs: ['F', 'A'], x: .62, y: .22 },
+  { label: 'Medical emergency', needs: ['A'], x: .80, y: .62 },
+  { label: 'Theft in progress', needs: ['P'], x: .40, y: .72 },
+  { label: 'Factory fire', needs: ['F', 'F', 'P'], x: .14, y: .78 },
+  { label: 'Flooded street', needs: ['F', 'A', 'P'], x: .55, y: .52 },
+].map(o => ({ ...o, x: MAP.x + o.x * MAP.w, y: MAP.y + o.y * MAP.h }));
+const units = [];
+(() => {
+  const r = rng(7);
+  ['P', 'F', 'A'].forEach(k => { for (let i = 0; i < 6; i++) {
+    let x, y, tries = 0;
+    do { x = MAP.x + 60 + r() * (MAP.w - 120); y = MAP.y + 50 + r() * (MAP.h - 100); tries++; }
+    while (tries < 500 && (incidents.some(c => Math.hypot(c.x - x, c.y - y) < 130 || (Math.abs(c.x - x) < 130 && y < c.y && c.y - y < 110))
+                           || units.some(u => Math.hypot(u.x - x, u.y - y) < 85)));
+    units.push({ k, x, y });
+  } });
+})();
+
+// greedy nearest-available assignment (for illustration)
+const assign = [];
+(() => {
+  const used = new Set();
+  incidents.forEach((inc, j) => inc.needs.forEach(k => {
+    let best = -1, bd = 1e9;
+    units.forEach((u, i) => { if (u.k !== k || used.has(i)) return; const d = Math.hypot(u.x - inc.x, u.y - inc.y); if (d < bd) { bd = d; best = i; } });
+    used.add(best); assign.push({ u: best, j });
+  }));
+})();
+const slots = assign.length;
+// number of ways to fill `slots` ordered seats from 18 units ~ 18!/(18-slots)!
+let combos = 1; for (let i = 0; i < slots; i++) combos *= (18 - i);
+const combosExp = Math.floor(Math.log10(combos));
+const combosMant = (combos / Math.pow(10, combosExp)).toFixed(1);
+
+function drawMap(alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = C.bg2; rrect(MAP.x, MAP.y, MAP.w, MAP.h, 22); ctx.fill();
+  ctx.save(); rrect(MAP.x, MAP.y, MAP.w, MAP.h, 22); ctx.clip();
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 3;
+  for (let x = MAP.x + 70; x < MAP.x + MAP.w; x += 110) { ctx.beginPath(); ctx.moveTo(x, MAP.y); ctx.lineTo(x + 30, MAP.y + MAP.h); ctx.stroke(); }
+  for (let y = MAP.y + 60; y < MAP.y + MAP.h; y += 100) { ctx.beginPath(); ctx.moveTo(MAP.x, y); ctx.lineTo(MAP.x + MAP.w, y - 20); ctx.stroke(); }
+  // river
+  ctx.strokeStyle = 'rgba(61,150,245,0.35)'; ctx.lineWidth = 34; ctx.beginPath();
+  ctx.moveTo(MAP.x - 20, MAP.y + MAP.h * .92);
+  ctx.bezierCurveTo(MAP.x + 400, MAP.y + MAP.h * .55, MAP.x + 800, MAP.y + MAP.h * 1.05, MAP.x + MAP.w + 20, MAP.y + MAP.h * .70);
+  ctx.stroke(); ctx.restore();
+  text('Illustrative city map', MAP.x + MAP.w - 20, MAP.y + MAP.h - 24, { size: 22, color: C.dim, weight: 'normal', align: 'right' });
+  ctx.restore();
+}
+function drawUnit(u, alpha, x = u.x, y = u.y, scale = 1) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = TYPES[u.k].color; ctx.beginPath(); ctx.arc(x, y, 27 * scale, 0, 7); ctx.fill();
+  ctx.fillStyle = C.bg; ctx.beginPath(); ctx.arc(x, y, 22 * scale, 0, 7); ctx.fill();
+  ctx.font = `${26 * scale}px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(TYPES[u.k].icon, x, y + 1);
+  ctx.restore();
+}
+function drawIncident(inc, t, alpha, solved = 0) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  const col = solved > 0.5 ? C.amb : '#FF3B3B';
+  const p = (t * 1.2) % 1;
+  if (solved < 0.5) { ctx.strokeStyle = col; ctx.globalAlpha = alpha * (1 - p); ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(inc.x, inc.y, 22 + p * 40, 0, 7); ctx.stroke(); }
+  ctx.globalAlpha = alpha; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(inc.x, inc.y, 20, 0, 7); ctx.fill();
+  text(solved > 0.5 ? '✓' : '!', inc.x, inc.y + 2, { size: 28, color: '#fff' });
+  // label pill
+  ctx.font = `bold 24px ${F}`; const w = ctx.measureText(inc.label).width + 28;
+  ctx.fillStyle = 'rgba(4,10,22,0.85)'; rrect(inc.x - w / 2, inc.y - 70, w, 38, 19); ctx.fill();
+  text(inc.label, inc.x, inc.y - 50, { size: 24 });
+  ctx.restore();
+}
+function legend(alpha, extra) {
+  const x = 1380, y = 230;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = C.bg2; rrect(x, y, 450, 320, 20); ctx.fill();
+  text('ONE CONTROL ROOM', x + 30, y + 44, { size: 26, color: C.accent, align: 'left' });
+  ['P', 'F', 'A'].forEach((k, i) => {
+    drawUnit({ k }, 1, x + 60, y + 105 + i * 62, 0.9);
+    text(TYPES[k].name, x + 105, y + 106 + i * 62, { size: 34, align: 'left' });
+  });
+  ctx.fillStyle = '#FF3B3B'; ctx.beginPath(); ctx.arc(x + 60, y + 105 + 3 * 62, 20, 0, 7); ctx.fill();
+  text('!', x + 60, y + 107 + 3 * 62, { size: 28 });
+  text('Emergency call', x + 105, y + 106 + 3 * 62, { size: 34, align: 'left' });
+  ctx.restore();
+  if (extra) extra(x, y + 340, alpha);
+}
+
+// ---------- scenes ----------
+function sTitle(t) {           // 0 - 7
+  const a = env(t, 0, 7, 0.8);
+  const k = ease(prog(t, 0.3, 2));
+  ctx.save(); ctx.globalAlpha = a;
+  // glowing orbit
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = `rgba(61,214,245,${0.25 - i * 0.06})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(960, 430, 420 + i * 80, 120 + i * 40, (t * 0.15) + i * 1.05, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+  text('AROHAK TECHNOLOGIES', 960, 400, { size: 96, alpha: a * k });
+  text('Quantum-inspired optimisation for decisions that cannot wait', 960, 500, { size: 44, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 1.5, 3)) });
+  text('From saving lives to running factories', 960, 640, { size: 40, color: C.gold, alpha: a * ease(prog(t, 3, 4.5)) });
+}
+
+function sProblem(t) {         // 7 - 16
+  const a = env(t, 7, 16);
+  brandTag(a);
+  headline('One emergency. Three services. Seconds to decide.', a * ease(prog(t, 7.2, 8)));
+  const items = [['P', '100'], ['F', '101'], ['A', '108']];
+  const merge = ease(prog(t, 10.5, 12.5));
+  items.forEach(([k, num], i) => {
+    const appear = ease(prog(t, 7.8 + i * 0.6, 8.6 + i * 0.6));
+    const x0 = 520 + i * 440, y0 = 450;
+    const x = lerp(x0, 960, merge), y = lerp(y0, 470, merge);
+    ctx.save(); ctx.globalAlpha = a * appear * (1 - merge);
+    ctx.fillStyle = C.bg2; rrect(x - 170, y - 150, 340, 300, 24); ctx.fill();
+    ctx.strokeStyle = TYPES[k].color; ctx.lineWidth = 4; rrect(x - 170, y - 150, 340, 300, 24); ctx.stroke();
+    ctx.font = `110px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(TYPES[k].icon, x, y - 40);
+    text(TYPES[k].name, x, y + 60, { size: 40 });
+    text('Dial ' + num, x, y + 110, { size: 32, color: TYPES[k].color });
+    ctx.restore();
+  });
+  // 112 badge
+  const b = ease(prog(t, 12, 13.2));
+  if (b > 0) {
+    ctx.save(); ctx.globalAlpha = a * b;
+    ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(960, 470, 150 * (0.7 + 0.3 * b), 0, 7); ctx.fill();
+    text('112', 960, 450, { size: 120, color: C.bg });
+    text('ONE NUMBER', 960, 535, { size: 30, color: C.bg });
+    ctx.restore();
+    text('🚓  🚒  🚑', 960, 700, { size: 64, alpha: a * b });
+  }
+  caption(merge < 0.5 ? 'Police, fire and ambulance used to work separately'
+                      : 'Andhra Pradesh 112 brings them into one command',
+          a * ease(prog(t, 8, 8.8)));
+}
+
+function sChaos(t) {           // 16 - 31
+  const a = env(t, 16, 31);
+  brandTag(a);
+  headline('The hard part: who goes where, right now?', a);
+  drawMap(a);
+  units.forEach((u, i) => drawUnit(u, a * ease(prog(t, 16.4 + i * 0.06, 17 + i * 0.06))));
+  incidents.forEach((inc, j) => drawIncident(inc, t, a * ease(prog(t, 18 + j * 0.8, 18.5 + j * 0.8))));
+  // flickering candidate options
+  const ch = prog(t, 23.5, 24.5);
+  if (ch > 0) {
+    const bucket = Math.floor(t * 8);
+    ctx.save(); ctx.globalAlpha = a * ch * 0.75; ctx.lineWidth = 2.5; ctx.setLineDash([10, 10]);
+    for (let n = 0; n < 26; n++) {
+      const u = units[Math.floor(hash(bucket * 31 + n) * units.length)];
+      const inc = incidents[Math.floor(hash(bucket * 17 + n * 3) * incidents.length)];
+      ctx.strokeStyle = TYPES[u.k].color; ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(inc.x, inc.y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  legend(a * ease(prog(t, 16.5, 17.5)), (x, y, al) => {
+    const c = ease(prog(t, 24, 26));
+    ctx.save(); ctx.globalAlpha = al * c;
+    ctx.fillStyle = 'rgba(255,90,78,0.14)'; rrect(x, y, 450, 290, 20); ctx.fill();
+    ctx.strokeStyle = C.fire; ctx.lineWidth = 3; rrect(x, y, 450, 290, 20); ctx.stroke();
+    text('POSSIBLE DISPATCH PLANS', x + 225, y + 45, { size: 26, color: C.fire });
+    text(`${combosMant} × 10`, x + 205, y + 125, { size: 76 });
+    text(`${combosExp}`, x + 385, y + 90, { size: 40 });
+    text(`for just ${incidents.length} incidents`, x + 225, y + 200, { size: 28, color: C.dim, weight: 'normal' });
+    text(`and ${units.length} vehicles`, x + 225, y + 240, { size: 28, color: C.dim, weight: 'normal' });
+    ctx.restore();
+  });
+  const capA = a * ease(prog(t, 17, 17.8));
+  if (t < 23.5) caption('Calls arrive every minute, vehicles are always moving', capA);
+  else caption('Too many combinations to check one by one in real time', capA,
+               'Ordinary computing struggles to find the best plan fast enough');
+}
+
+// spin lattice for Ising scene
+const SP = { cols: 16, rows: 6, x: 380, y: 560, dx: 50, dy: 50 };
+function target(i, j) { return 1; }
+function sEngine(t) {          // 31 - 46
+  const a = env(t, 31, 46);
+  brandTag(a);
+  headline('How Arohak solves it', a, 'Quantum-inspired optimisation on an Ising machine');
+  const boxes = [
+    ['📞', 'Live calls +', 'vehicle GPS'],
+    ['🧮', 'Arohak converts it', 'into an energy model'],
+    ['ATOM', 'Ising machine', 'by Quanfluence'],
+    ['✅', 'Best dispatch', 'plan in seconds'],
+  ];
+  boxes.forEach((bx, i) => {
+    const ap = ease(prog(t, 31.6 + i * 0.9, 32.4 + i * 0.9));
+    const x = 150 + i * 430, y = 230;
+    ctx.save(); ctx.globalAlpha = a * ap;
+    ctx.fillStyle = i === 2 ? 'rgba(61,214,245,0.14)' : C.bg2; rrect(x, y, 330, 230, 22); ctx.fill();
+    ctx.strokeStyle = i === 2 ? C.accent : C.grid; ctx.lineWidth = 3; rrect(x, y, 330, 230, 22); ctx.stroke();
+    if (bx[0] === 'ATOM') {
+      ctx.strokeStyle = C.accent; ctx.lineWidth = 3;
+      for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.ellipse(x + 165, y + 70, 40, 14, t * 1.5 + q * Math.PI / 3, 0, 7); ctx.stroke(); }
+      ctx.fillStyle = C.accent; ctx.beginPath(); ctx.arc(x + 165, y + 70, 7, 0, 7); ctx.fill();
+    } else { ctx.font = `64px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(bx[0], x + 165, y + 70); }
+    text(bx[1], x + 165, y + 150, { size: 32 });
+    text(bx[2], x + 165, y + 192, { size: 32, color: i === 2 ? C.accent : C.dim, weight: i === 2 ? 'bold' : 'normal' });
+    if (i < 3) text('➜', x + 380, y + 115, { size: 56, color: C.gold });
+    ctx.restore();
+  });
+  // spins settling
+  const settle = prog(t, 36.5, 42.5);
+  const la = a * ease(prog(t, 35.5, 36.5));
+  if (la > 0) {
+    ctx.save(); ctx.globalAlpha = la;
+    ctx.fillStyle = C.bg2; rrect(SP.x - 60, SP.y - 50, SP.cols * SP.dx + 70, SP.rows * SP.dy + 50, 20); ctx.fill();
+    const bucket = Math.floor(t * 10);
+    let aligned = 0;
+    for (let i = 0; i < SP.cols; i++) for (let j = 0; j < SP.rows; j++) {
+      const id = i * 31 + j * 7;
+      const lockAt = hash(id) * 0.9;       // when this spin locks in
+      const s = settle > lockAt ? target(i, j) : (hash(id + bucket * 13) > 0.5 ? 1 : -1);
+      if (s === target(i, j)) aligned++;
+      const cx = SP.x + i * SP.dx, cy = SP.y + j * SP.dy;
+      ctx.strokeStyle = s > 0 ? C.accent : C.fire; ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(cx, cy + 14 * s); ctx.lineTo(cx, cy - 14 * s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy - 20 * s); ctx.lineTo(cx - 8, cy - 8 * s); ctx.lineTo(cx + 8, cy - 8 * s); ctx.fill();
+    }
+    ctx.restore();
+    // energy meter
+    const e = 1 - ease(settle);
+    const mx = 1290, my = 520, mh = 300;
+    ctx.save(); ctx.globalAlpha = la;
+    text('COST / ENERGY', mx + 60, my - 15, { size: 24, color: C.dim });
+    ctx.fillStyle = C.bg2; rrect(mx + 20, my + 10, 80, mh, 14); ctx.fill();
+    const fh = mh * (0.08 + 0.92 * e);
+    ctx.fillStyle = e > 0.3 ? C.fire : C.amb; rrect(mx + 20, my + 10 + mh - fh, 80, fh, 14); ctx.fill();
+    text(settle < 1 ? 'searching…' : 'lowest = best', mx + 60, my + mh + 50, { size: 28, color: settle < 1 ? C.gold : C.amb });
+    ctx.restore();
+  }
+  const capA = a * ease(prog(t, 32, 32.8));
+  if (t < 36.5) caption('Arohak turns the dispatch decision into an energy problem', capA);
+  else caption('The machine settles into its lowest-energy state: the best plan', capA,
+               'Like a ball rolling to the bottom of a valley, it finds the best answer fast');
+}
+
+function sSolved(t) {          // 46 - 57
+  const a = env(t, 46, 57);
+  brandTag(a);
+  headline('Right vehicle. Right incident. In seconds.', a);
+  drawMap(a);
+  const draw = ease(prog(t, 46.8, 49));
+  const drive = ease(prog(t, 49.5, 53));
+  const assignedSet = new Set(assign.map(s => s.u));
+  units.forEach((u, i) => { if (!assignedSet.has(i)) drawUnit(u, a * 0.35); });
+  const seen = {};
+  assign.forEach(({ u, j }, n) => {
+    const U = units[u], I = incidents[j];
+    const m = seen[j] = (seen[j] || 0) + 1, tot = I.needs.length;
+    const ang = Math.PI / 2 + (m - (tot + 1) / 2) * 0.9;
+    const tx = I.x + Math.cos(ang) * 72, ty = I.y + Math.sin(ang) * 72;
+    const d = clamp(draw * 1.4 - n * 0.03);
+    const cx = lerp(U.x, tx, drive), cy = lerp(U.y, ty, drive);
+    ctx.save(); ctx.globalAlpha = a * (1 - drive); ctx.strokeStyle = TYPES[U.k].color; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(lerp(cx, I.x, d), lerp(cy, I.y, d)); ctx.stroke(); ctx.restore();
+    drawUnit(U, a, cx, cy);
+  });
+  incidents.forEach(inc => drawIncident(inc, t, a, prog(t, 52.5, 53.5)));
+  // impact panel
+  const pa = a * ease(prog(t, 53, 54));
+  ctx.save(); ctx.globalAlpha = pa;
+  ctx.fillStyle = 'rgba(61,220,132,0.12)'; rrect(1380, 230, 450, 640, 20); ctx.fill();
+  ctx.strokeStyle = C.amb; ctx.lineWidth = 3; rrect(1380, 230, 450, 640, 20); ctx.stroke();
+  text('DELIVERED WITH', 1605, 290, { size: 26, color: C.amb });
+  text('Government of', 1605, 360, { size: 40 });
+  text('Andhra Pradesh', 1605, 410, { size: 40 });
+  text('112 integrated', 1605, 500, { size: 32, color: C.dim, weight: 'normal' });
+  text('emergency response', 1605, 542, { size: 32, color: C.dim, weight: 'normal' });
+  text('🚓  🚒  🚑', 1605, 640, { size: 56 });
+  text('One number', 1605, 730, { size: 32 });
+  text('One control room', 1605, 775, { size: 32 });
+  text('One smart engine', 1605, 820, { size: 32, color: C.accent });
+  ctx.restore();
+  const capA = a * ease(prog(t, 46.6, 47.4));
+  caption(t < 52.5 ? 'Every incident gets the best combination of responders'
+                   : 'Faster help for citizens, with every vehicle used well', capA);
+}
+
+// manufacturing
+const LINES = 3, SLOTS = 10;
+const PCOL = ['#3DD6F5', '#F5B83D', '#B57BFF', '#FF7EB3', '#3DDC84'];
+const PNAME = ['Shampoo', 'Lotion', 'Mouthwash', 'Baby care', 'Pain relief'];
+const before = [], after = [];
+(() => {
+  const r = rng(42);
+  for (let l = 0; l < LINES; l++) {
+    const row = []; for (let s = 0; s < SLOTS; s++) row.push(Math.floor(r() * 5));
+    before.push(row);
+    const idx = row.map((p, s) => ({ p, s })).sort((x, y) => x.p - y.p || x.s - y.s);
+    after.push(idx);            // after[l][newPos] = {p, s(oldPos)}
+  }
+})();
+const changeovers = rows => rows.reduce((n, row) => n + row.filter((p, i) => i > 0 && p !== row[i - 1]).length, 0);
+const coBefore = changeovers(before), coAfter = changeovers(after.map(r => r.map(o => o.p)));
+
+function sFactory(t) {         // 57 - 71
+  const a = env(t, 57, 71);
+  brandTag(a);
+  headline('Same engine. Industrial scale.', a, 'Manufacturing: sequencing products on shared production lines');
+  const k = ease(prog(t, 62, 65));
+  const bx = 330, by = 300, bw = 108, bh = 90, gap = 12, lg = 150;
+  for (let l = 0; l < LINES; l++) {
+    const la = a * ease(prog(t, 57.6 + l * 0.4, 58.4 + l * 0.4));
+    ctx.save(); ctx.globalAlpha = la;
+    text('🏭 Line ' + (l + 1), 120, by + l * lg + bh / 2, { size: 34, align: 'left' });
+    ctx.fillStyle = C.bg2; rrect(bx - 14, by + l * lg - 14, SLOTS * (bw + gap) + 16, bh + 28, 16); ctx.fill();
+    after[l].forEach((o, np) => {
+      const x = lerp(bx + o.s * (bw + gap), bx + np * (bw + gap), k);
+      const yOff = Math.sin(k * Math.PI) * (o.s % 2 ? -40 : 40);
+      ctx.fillStyle = PCOL[o.p]; rrect(x, by + l * lg + yOff, bw, bh, 12); ctx.fill();
+    });
+    // changeover markers
+    const row = k < 0.5 ? before[l] : after[l].map(o => o.p);
+    const ma = Math.abs(k - 0.5) * 2;
+    row.forEach((p, i) => { if (i > 0 && p !== row[i - 1]) text('⚡', bx + i * (bw + gap) - gap / 2, by + l * lg - 30, { size: 34, alpha: ma, color: C.gold }); });
+    ctx.restore();
+  }
+  // product legend
+  const la2 = a * ease(prog(t, 58.5, 59.5));
+  PNAME.forEach((n, i) => {
+    const x = 330 + i * 260;
+    ctx.save(); ctx.globalAlpha = la2; ctx.fillStyle = PCOL[i]; rrect(x, 760, 32, 32, 8); ctx.fill(); ctx.restore();
+    text(n, x + 46, 777, { size: 28, color: C.dim, weight: 'normal', align: 'left', alpha: la2 });
+  });
+  text('⚡ = changeover (cleaning, downtime, waste)', 330, 840, { size: 28, color: C.gold, weight: 'normal', align: 'left', alpha: la2 });
+  text('Illustrative example', 1800, 840, { size: 22, color: C.dim, weight: 'normal', align: 'right', alpha: la2 });
+  // counter
+  const n = Math.round(lerp(coBefore, coAfter, k));
+  ctx.save(); ctx.globalAlpha = a * ease(prog(t, 59, 60));
+  ctx.fillStyle = C.bg2; rrect(1560, 290, 280, 400, 20); ctx.fill();
+  text('CHANGEOVERS', 1700, 340, { size: 26, color: C.dim });
+  text(String(n), 1700, 450, { size: 120, color: k > 0.95 ? C.amb : C.gold });
+  if (k > 0.95) text(`was ${coBefore}`, 1700, 550, { size: 34, color: C.dim, weight: 'normal' });
+  if (k > 0.95) text(`−${Math.round((1 - coAfter / coBefore) * 100)}%`, 1700, 620, { size: 52, color: C.amb });
+  ctx.restore();
+  const capA = a * ease(prog(t, 57.6, 58.4));
+  if (t < 62) caption('Every product switch on a line costs time, energy and material', capA);
+  else caption('The same engine finds the best order: fewer switches, more output', capA,
+               'Applies to FMCG, pharma and consumer-health manufacturing');
+}
+
+function sVision(t) {          // 71 - 81
+  const a = env(t, 71, 81);
+  brandTag(a);
+  headline('One optimisation engine for Andhra Pradesh', a);
+  const tiles = [
+    ['🚑', 'Emergency response', 'LIVE · 112', true],
+    ['🌀', 'Cyclone & flood evacuation', 'Disaster management'],
+    ['💡', 'Power grid balancing', 'Energy'],
+    ['🚌', 'Bus & crew scheduling', 'Public transport'],
+    ['🌾', 'PDS & farm logistics', 'Agriculture & food'],
+    ['🏭', 'Factory scheduling', 'Industry & pharma'],
+  ];
+  tiles.forEach((tl, i) => {
+    const ap = ease(prog(t, 71.6 + i * 0.45, 72.3 + i * 0.45));
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = 170 + col * 540, y = 210 + row * 330 + (1 - ap) * 30;
+    ctx.save(); ctx.globalAlpha = a * ap;
+    ctx.fillStyle = tl[3] ? 'rgba(61,220,132,0.12)' : C.bg2; rrect(x, y, 500, 290, 22); ctx.fill();
+    ctx.strokeStyle = tl[3] ? C.amb : C.grid; ctx.lineWidth = 3; rrect(x, y, 500, 290, 22); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = `76px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(tl[0], x + 250, y + 85);
+    text(tl[1], x + 250, y + 180, { size: 36 });
+    text(tl[2], x + 250, y + 232, { size: 28, color: tl[3] ? C.amb : C.dim, weight: tl[3] ? 'bold' : 'normal' });
+    ctx.restore();
+  });
+  caption('Proven in emergency response. Ready for every department.', a * ease(prog(t, 72, 72.8)));
+}
+
+function sClose(t) {           // 81 - 90
+  const a = env(t, 81, 90, 0.8);
+  ctx.save(); ctx.globalAlpha = a;
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = `rgba(61,214,245,${0.22 - i * 0.06})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(960, 380, 420 + i * 80, 110 + i * 40, (t * 0.15) + i * 1.05, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+  text('AROHAK TECHNOLOGIES', 960, 370, { size: 92, alpha: a });
+  text('Quantum-inspired today. Quantum-ready tomorrow.', 960, 480, { size: 46, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 82, 83)) });
+  text('Built in India  ·  Proven in Andhra Pradesh', 960, 570, { size: 40, color: C.gold, alpha: a * ease(prog(t, 83, 84)) });
+  const ba = a * ease(prog(t, 84.5, 85.5));
+  ctx.save(); ctx.globalAlpha = ba;
+  ctx.fillStyle = C.accent; rrect(660, 700, 600, 100, 50); ctx.fill(); ctx.restore();
+  text('Talk to us at our booth', 960, 752, { size: 42, color: C.bg, alpha: ba });
+}
+
+const DURATION = 90;
+window.DURATION = DURATION;
+window.render = function (t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  // subtle background glow
+  const g = ctx.createRadialGradient(960, 540, 100, 960, 540, 1100);
+  g.addColorStop(0, 'rgba(30,60,120,0.35)'); g.addColorStop(1, 'rgba(8,17,32,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (t < 7) sTitle(t);
+  else if (t < 16) sProblem(t);
+  else if (t < 31) sChaos(t);
+  else if (t < 46) sEngine(t);
+  else if (t < 57) sSolved(t);
+  else if (t < 71) sFactory(t);
+  else if (t < 81) sVision(t);
+  else sClose(t);
+  // progress bar
+  ctx.fillStyle = 'rgba(61,214,245,0.5)'; ctx.fillRect(0, H - 6, W * t / DURATION, 6);
+};
+document.fonts.ready.then(() => { window.READY = true; });
+</script>
+</body></html>
