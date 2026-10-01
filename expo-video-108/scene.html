@@ -1,0 +1,428 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#081120}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080;
+const ctx = document.getElementById('c').getContext('2d');
+const F = '"Liberation Sans", "DejaVu Sans", "Noto Color Emoji", sans-serif';
+
+const C = {
+  bg: '#081120', bg2: '#0E1B33', grid: '#16264A', text: '#F2F6FC', dim: '#9AACC8',
+  accent: '#3DD6F5', gold: '#F5B83D', live: '#8A97AD', red: '#FF4B4B', green: '#3DDC84',
+};
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+function env(t, a, b, f = 0.6) { return Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b)); }
+
+function text(str, x, y, { size = 48, color = C.text, weight = 'bold', align = 'center', alpha = 1, maxW = 0 } = {}) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = color;
+  ctx.font = `${weight} ${size}px ${F}`;
+  if (maxW) { const w = ctx.measureText(str).width; if (w > maxW) { size = Math.floor(size * maxW / w); ctx.font = `${weight} ${size}px ${F}`; } }
+  ctx.textAlign = align; ctx.textBaseline = 'middle';
+  ctx.fillText(str, x, y); ctx.restore();
+}
+function emoji(ch, x, y, size, alpha = 1) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = '#fff';
+  ctx.font = `${size}px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ch, x, y); ctx.restore();
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function box(x, y, w, h, r, fill, stroke, lw = 3) {
+  if (fill) { ctx.fillStyle = fill; rrect(x, y, w, h, r); ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; rrect(x, y, w, h, r); ctx.stroke(); }
+}
+
+function caption(str, alpha, sub) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(4,10,22,0.9)'; rrect(110, 912, 1700, sub ? 128 : 100, 18); ctx.fill();
+  ctx.fillStyle = C.accent; ctx.fillRect(110, 930, 8, sub ? 92 : 64);
+  text(str, 960, sub ? 954 : 962, { size: 42, maxW: 1620 });
+  if (sub) text(sub, 960, 1008, { size: 29, color: C.dim, weight: 'normal', maxW: 1620 });
+  ctx.restore();
+}
+function headline(str, alpha, sub) {
+  text(str, 960, 96, { size: 58, alpha, maxW: 1700 });
+  if (sub) text(sub, 960, 150, { size: 30, color: C.accent, weight: 'normal', alpha, maxW: 1700 });
+}
+function footnote(alpha) {
+  text('Live 108: actual data, avg min per call  ·  QUBO: simulated on the same 108 calls, +15 min at scene & +15 min handover added to QUBO only  ·  Not yet deployed live',
+       960, 1060, { size: 19, color: C.dim, weight: 'normal', alpha, maxW: 1840 });
+}
+function brandTag(alpha) {
+  let x = 60;
+  for (const [str, color] of [['AROHAK', C.accent], ['  ×  ', C.gold], ['QUANFLUENCE', C.accent]]) {
+    text(str, x, 40, { size: 24, color, align: 'left', alpha: alpha * 0.9 });
+    ctx.font = `bold 24px ${F}`; x += ctx.measureText(str).width;
+  }
+}
+function lockup(y, alpha, size = 80) {
+  text('AROHAK TECHNOLOGIES', 960, y, { size, alpha });
+  text('×', 960, y + size * 0.95, { size: size * 0.6, color: C.gold, alpha });
+  text('QUANFLUENCE', 960, y + size * 1.9, { size, alpha });
+}
+function orbits(cy, a, t) {
+  ctx.save(); ctx.globalAlpha = a;
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = `rgba(61,214,245,${0.22 - i * 0.06})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(960, cy, 420 + i * 80, 120 + i * 40, (t * 0.15) + i * 1.05, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+}
+function atom(x, y, r, t, color = C.accent) {
+  ctx.strokeStyle = color; ctx.lineWidth = 3;
+  for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.35, t * 1.5 + q * Math.PI / 3, 0, 7); ctx.stroke(); }
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r * 0.18, 0, 7); ctx.fill();
+}
+
+// ---------- the numbers (minutes from the 108 call) ----------
+const LIVE = { reach: 22.6, hospital: 60.6 };                        // live data, no buffers
+const QUBO = { reach: 9.8, leave: 24.8, hospital: 32.5, done: 47.5 };   // 9.8 + 15 + 7.7 + 15
+
+// race: video time -> shared clock in minutes (pauses at milestones so captions can be read)
+const KEYS = [[18.5, 0], [25, 9.8], [26.2, 9.8], [29, 22.6], [30.6, 22.6], [32.2, 24.8], [33.2, 24.8],
+              [36, 32.5], [37.6, 32.5], [42, 47.5], [43.6, 47.5], [48, 60.6], [60, 60.6]];
+function clockAt(t) {
+  if (t <= KEYS[0][0]) return 0;
+  for (let i = 1; i < KEYS.length; i++) {
+    const [t1, m1] = KEYS[i], [t0, m0] = KEYS[i - 1];
+    if (t <= t1) return lerp(m0, m1, (t - t0) / (t1 - t0));
+  }
+  return 60.6;
+}
+
+// ---------- split-screen panels ----------
+const PANELS = [
+  { x: 60, name: 'Current 108', tag: 'LIVE DATA', col: C.live, live: true },
+  { x: 980, name: 'QUBO routing', tag: 'SIMULATED · same 108 calls', col: C.accent, live: false },
+];
+const PW = 880, PY = 170, PH = 725;
+// illustrative map points relative to panel
+const BASE = [120, 340], PIN = [430, 110], HOSP = [760, 290];
+const ROUTE = {
+  live: { leg1: [BASE, [120, 250], [250, 250], [250, 180], [350, 180], [350, 110], PIN], leg2: [PIN, [600, 110], [600, 380], [680, 380], [680, 290], HOSP] },
+  qubo: { leg1: [BASE, [270, 240], PIN], leg2: [PIN, [600, 200], HOSP] },
+};
+function pathLen(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+function pointAt(p, f) {
+  let d = clamp(f) * pathLen(p);
+  for (let i = 1; i < p.length; i++) {
+    const s = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+    if (d <= s || i === p.length - 1) { const k = s ? Math.min(1, d / s) : 0; return [lerp(p[i - 1][0], p[i][0], k), lerp(p[i - 1][1], p[i][1], k)]; }
+    d -= s;
+  }
+}
+function strokePath(p, ox, oy, color, w, dash) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(ox + x, oy + y) : ctx.moveTo(ox + x, oy + y)); ctx.stroke(); ctx.restore();
+}
+function partialPath(p, f) { // sub-path from 0..f
+  const out = [p[0]]; let d = clamp(f) * pathLen(p);
+  for (let i = 1; i < p.length; i++) {
+    const s = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+    if (d >= s) { out.push(p[i]); d -= s; } else { const k = s ? d / s : 0; out.push([lerp(p[i - 1][0], p[i][0], k), lerp(p[i - 1][1], p[i][1], k)]); break; }
+  }
+  return out;
+}
+
+function sideState(P, T) {
+  if (P.live) {
+    if (T < LIVE.reach) return { leg: 1, f: T / LIVE.reach, clock: T, status: 'Driving to patient' };
+    if (T < LIVE.hospital) return { leg: 2, f: (T - LIVE.reach) / (LIVE.hospital - LIVE.reach), clock: T, status: 'Scene → hospital' };
+    return { leg: 2, f: 1, clock: LIVE.hospital, status: 'At hospital', done: true };
+  }
+  if (T < QUBO.reach) return { leg: 1, f: T / QUBO.reach, clock: T, status: 'Driving to patient' };
+  if (T < QUBO.leave) return { leg: 1, f: 1, clock: T, status: 'At scene', chip: '+15 min at scene (added)' };
+  if (T < QUBO.hospital) return { leg: 2, f: (T - QUBO.leave) / (QUBO.hospital - QUBO.leave), clock: T, status: 'Driving to hospital' };
+  if (T < QUBO.done) return { leg: 2, f: 1, clock: T, status: 'Handover', chip: '+15 min handover (added)' };
+  return { leg: 2, f: 1, clock: QUBO.done, status: 'Patient in care', done: true };
+}
+
+function drawPanel(P, T, a, t) {
+  if (a <= 0) return;
+  const ox = P.x, oy = PY;
+  ctx.save(); ctx.globalAlpha = a;
+  box(ox, oy, PW, PH, 22, C.bg2, P.live ? '#2A3A5C' : C.accent, P.live ? 2 : 3);
+  // header
+  text(P.name, ox + 30, oy + 42, { size: 40, align: 'left' });
+  ctx.font = `bold 22px ${F}`; const tw = ctx.measureText(P.tag).width + 28;
+  box(ox + 30, oy + 70, tw, 34, 17, P.live ? 'rgba(138,151,173,0.25)' : 'rgba(61,214,245,0.18)');
+  text(P.tag, ox + 44, oy + 88, { size: 22, color: P.live ? C.text : C.accent, align: 'left' });
+  const S = sideState(P, T);
+  // clock
+  text(S.clock.toFixed(1), ox + PW - 120, oy + 62, { size: 76, color: S.done ? C.green : (P.live ? C.text : C.accent), align: 'right' });
+  text('min', ox + PW - 30, oy + 76, { size: 30, color: C.dim, weight: 'normal', align: 'right' });
+  if (S.done) text('✓', ox + PW - 64, oy + 30, { size: 32, color: C.green });
+  // map area
+  const mx = ox + 20, my = oy + 120;
+  ctx.save(); rrect(mx, my, PW - 40, 420, 16); ctx.clip();
+  ctx.fillStyle = '#0A1630'; ctx.fillRect(mx, my, PW - 40, 420);
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 2;
+  for (let x = mx + 40; x < mx + PW; x += 80) { ctx.beginPath(); ctx.moveTo(x, my); ctx.lineTo(x, my + 420); ctx.stroke(); }
+  for (let y = my + 40; y < my + 420; y += 80) { ctx.beginPath(); ctx.moveTo(mx, y); ctx.lineTo(mx + PW, y); ctx.stroke(); }
+  ctx.restore();
+  const R = P.live ? ROUTE.live : ROUTE.qubo, col = P.live ? C.live : C.accent;
+  const mox = ox, moy = oy + 120;
+  strokePath(R.leg1, mox, moy, 'rgba(154,172,200,0.25)', 6, [10, 10]);
+  strokePath(R.leg2, mox, moy, 'rgba(154,172,200,0.25)', 6, [10, 10]);
+  const done1 = S.leg === 1 ? S.f : 1, done2 = S.leg === 2 ? S.f : 0;
+  strokePath(partialPath(R.leg1, done1), mox, moy, col, 7);
+  if (done2 > 0) strokePath(partialPath(R.leg2, done2), mox, moy, col, 7);
+  // pins
+  emoji('🚑', mox + BASE[0], moy + BASE[1] + 2, 1, 0); // keep font cache warm
+  const pulse = (t * 1.2) % 1, reached = S.leg === 2 || S.f >= 1;
+  if (!reached) { ctx.strokeStyle = C.red; ctx.globalAlpha = a * (1 - pulse); ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(mox + PIN[0], moy + PIN[1], 20 + pulse * 36, 0, 7); ctx.stroke(); ctx.globalAlpha = a; }
+  ctx.fillStyle = reached ? C.green : C.red; ctx.beginPath(); ctx.arc(mox + PIN[0], moy + PIN[1], 20, 0, 7); ctx.fill();
+  text(reached ? '✓' : '!', mox + PIN[0], moy + PIN[1] + 1, { size: 26 });
+  text('Patient', mox + PIN[0], moy + PIN[1] - 40, { size: 22, color: C.dim });
+  emoji('🏥', mox + HOSP[0], moy + HOSP[1], 54);
+  text('Hospital', mox + HOSP[0], moy + HOSP[1] + 46, { size: 22, color: C.dim });
+  text('Base', mox + BASE[0], moy + BASE[1] + 40, { size: 22, color: C.dim });
+  // ambulance
+  const pos = S.leg === 1 ? pointAt(R.leg1, S.f) : pointAt(R.leg2, S.f);
+  const off = (S.leg === 1 && S.f >= 1) || (S.leg === 2 && S.f >= 1) ? 46 : 0;
+  ctx.fillStyle = C.bg; ctx.strokeStyle = col; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(mox + pos[0] - off, moy + pos[1], 30, 0, 7); ctx.fill(); ctx.stroke();
+  emoji('🚑', mox + pos[0] - off, moy + pos[1] + 1, 32);
+  if (S.chip) {
+    ctx.font = `bold 26px ${F}`; const cw = ctx.measureText(S.chip).width + 30;
+    const cx = Math.min(ox + PW - 30 - cw, Math.max(ox + 30, mox + pos[0] - cw / 2)), cy = pos[1] > 250 ? moy + pos[1] - 92 : moy + pos[1] + 44;
+    box(cx, cy, cw, 42, 21, C.gold); text(S.chip, cx + cw / 2, cy + 22, { size: 26, color: C.bg });
+  }
+  text('Illustrative routes', ox + 40, my + 400, { size: 18, color: C.dim, weight: 'normal', align: 'left' });
+  // milestones
+  const rows = P.live
+    ? [['① Reaches patient', LIVE.reach], ['② Time at scene', null], ['③ Reaches hospital', LIVE.hospital], ['④ Handover', null]]
+    : [['① Reaches patient', QUBO.reach], ['② Leaves scene (+15)', QUBO.leave], ['③ Reaches hospital', QUBO.hospital], ['④ Handed over (+15)', QUBO.done]];
+  rows.forEach(([label, v], i) => {
+    const y = oy + 570 + i * 38;
+    const hit = v !== null && T >= v - 1e-6;
+    text(label, ox + 40, y, { size: 26, align: 'left', color: hit ? C.text : (v === null ? C.dim : '#56678A'), weight: hit ? 'bold' : 'normal' });
+    const val = v === null ? 'included in live data' : (hit ? v.toFixed(1) + ' min' : '—');
+    text(val, ox + PW - 40, y, { size: 26, align: 'right', color: v === null ? C.dim : (hit ? (P.live ? C.text : C.accent) : '#56678A'), weight: v === null ? 'normal' : 'bold' });
+  });
+  ctx.restore();
+}
+
+// ---------- scenes ----------
+function sTitle(t) {                // 0 - 6
+  const a = env(t, 0, 6, 0.8);
+  orbits(420, a, t);
+  lockup(170, a * ease(prog(t, 0.2, 1.6)), 72);
+  text('108 Ambulance Dispatch: Simulation Pilot', 960, 500, { size: 56, color: C.gold, alpha: a * ease(prog(t, 1.2, 2.4)) });
+  text("QUBO routing on Quanfluence's Ising machine, tested on real 108 call data", 960, 580, { size: 36, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 2, 3.2)) });
+  const pa = a * ease(prog(t, 2.6, 3.6));
+  emoji('🚑', 960, 720, 90, pa);
+  // pulse line
+  ctx.save(); ctx.globalAlpha = pa; ctx.strokeStyle = C.red; ctx.lineWidth = 4; ctx.beginPath();
+  const sweep = (t * 260) % 1400;
+  for (let x = 260; x <= 1660; x += 4) {
+    const d = x - 260, k = ((d - sweep) % 1400 + 1400) % 1400;
+    let y = 830; if (k < 60) y += Math.sin(k / 60 * Math.PI * 2) * -40;
+    x === 260 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function sCall(t) {                 // 6 - 13
+  const a = env(t, 6, 13);
+  brandTag(a);
+  headline('From the 108 call to the hospital, every minute matters', a * ease(prog(t, 6.2, 7)));
+  // phone ringing
+  const shake = t < 9.5 ? Math.sin(t * 40) * 8 : 0;
+  ctx.save(); ctx.globalAlpha = a;
+  box(260, 260, 520, 520, 30, C.bg2);
+  ctx.restore();
+  emoji('📞', 520 + shake, 470, 170, a * ease(prog(t, 6.4, 7.2)));
+  text('108', 520, 680, { size: 90, color: C.red, alpha: a * ease(prog(t, 7, 7.8)) });
+  // map with pin
+  ctx.save(); ctx.globalAlpha = a * ease(prog(t, 8, 9));
+  box(860, 260, 800, 520, 30, '#0A1630');
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 2;
+  for (let x = 900; x < 1660; x += 80) { ctx.beginPath(); ctx.moveTo(x, 260); ctx.lineTo(x, 780); ctx.stroke(); }
+  for (let y = 300; y < 780; y += 80) { ctx.beginPath(); ctx.moveTo(860, y); ctx.lineTo(1660, y); ctx.stroke(); }
+  const p = (t * 1.2) % 1;
+  ctx.strokeStyle = C.red; ctx.lineWidth = 5; ctx.globalAlpha *= (1 - p); ctx.beginPath(); ctx.arc(1260, 500, 34 + p * 70, 0, 7); ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = a * ease(prog(t, 8.4, 9.2));
+  ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(1260, 500, 34, 0, 7); ctx.fill(); ctx.restore();
+  text('!', 1260, 502, { size: 44, alpha: a * ease(prog(t, 8.4, 9.2)) });
+  text('Distress location', 1260, 580, { size: 30, alpha: a * ease(prog(t, 8.6, 9.4)) });
+  caption(t < 10 ? 'A distress call comes in to 108' : 'Which ambulance? Which route? Which hospital?', a * ease(prog(t, 6.6, 7.4)));
+}
+
+function sSplit(t) {                // 13 - 50 (setup + race)
+  const a = env(t, 13, 50);
+  brandTag(a);
+  const T = clockAt(t);
+  if (t < 18.5) headline('Live 108 vs QUBO simulated on the same calls', a, 'Same calls. Same map. Watch the clock.');
+  else headline('Same emergency. Two systems. One clock from the 108 call.', a);
+  PANELS.forEach((P, i) => drawPanel(P, T, a * ease(prog(t, 13.3 + i * 0.5, 14.2 + i * 0.5)), t));
+  // big "13 min sooner" badge at stage 1
+  const b1 = ease(prog(t, 29, 29.6)) * (1 - prog(t, 30.4, 30.8));
+  if (b1 > 0) {
+    ctx.save(); ctx.globalAlpha = a * b1; box(730, 300, 460, 130, 65, C.green); ctx.restore();
+    text('13 min sooner', 960, 348, { size: 48, color: C.bg, alpha: a * b1 });
+    text('to the patient (−57%)', 960, 396, { size: 28, color: C.bg, alpha: a * b1 });
+  }
+  const b2 = ease(prog(t, 48.4, 49));
+  if (b2 > 0) {
+    ctx.save(); ctx.globalAlpha = a * b2; box(730, 300, 460, 130, 65, C.green); ctx.restore();
+    text('13 min sooner', 960, 348, { size: 48, color: C.bg, alpha: a * b2 });
+    text('into hospital care (−22%)', 960, 396, { size: 28, color: C.bg, alpha: a * b2 });
+  }
+  const ca = a * ease(prog(t, 13.6, 14.4));
+  let cap, sub;
+  if (t < 18.5) { cap = 'Left: what really happened on 108.  Right: the same calls, simulated with QUBO'; }
+  else if (t < 26.2) { cap = '① Ambulance reaches patient'; sub = 'QUBO (simulated) arrives in 9.8 min'; }
+  else if (t < 30.6) { cap = '① Reaches patient: Live 108 22.6 min  ·  QUBO (simulated) 9.8 min'; sub = '13 minutes sooner at the patient\'s side (−57%)'; }
+  else if (t < 33.2) { cap = '② +15 min at the scene, added to the simulation'; sub = 'Live data already includes time at the scene'; }
+  else if (t < 37.6) { cap = '③ QUBO (simulated) reaches hospital at 32.5 min'; sub = 'Live 108 is still on its way'; }
+  else if (t < 43.6) { cap = '④ +15 min hospital handover, added to the simulation'; sub = 'Simulated patient in care at 47.5 min'; }
+  else if (t < 48) { cap = 'Live 108 is still on its way to the hospital'; sub = 'QUBO (simulated): patient in care at 47.5 min'; }
+  else { cap = 'Live 108 reaches hospital at 60.6 min  ·  QUBO (simulated) 47.5 min'; sub = 'Even with 30 min of buffers added to the QUBO side only'; }
+  caption(cap, ca, sub);
+  if (t >= 18.5) footnote(a);
+}
+
+function sBars(t) {                 // 50 - 58
+  const a = env(t, 50, 58);
+  brandTag(a);
+  headline('Call → patient in hospital care', a, 'Average minutes per call');
+  const X0 = 420, SC = 1180 / 60.6, k = ease(prog(t, 50.6, 53));
+  // live bar
+  text('Current 108', 380, 330, { size: 36, align: 'right', alpha: a });
+  text('LIVE DATA', 380, 370, { size: 22, color: C.dim, align: 'right', alpha: a });
+  ctx.save(); ctx.globalAlpha = a; box(X0, 300, 60.6 * SC * k, 90, 12, C.live); ctx.restore();
+  text('60.6 min', X0 + 60.6 * SC * k + 20, 345, { size: 40, align: 'left', alpha: a * prog(t, 52.5, 53) });
+  text('Call → hospital (actual)', X0 + 20, 345, { size: 26, color: C.bg, align: 'left', alpha: a * prog(t, 52.5, 53) });
+  // qubo bar segments
+  text('QUBO routing', 380, 520, { size: 36, align: 'right', alpha: a });
+  text('SIMULATED', 380, 560, { size: 22, color: C.accent, align: 'right', alpha: a });
+  const segs = [[9.8, C.accent, 'Reach 9.8'], [15, C.gold, '+15 scene'], [7.7, C.accent, 'Drive 7.7'], [15, C.gold, '+15 handover']];
+  let x = X0, acc = 0; const k2 = ease(prog(t, 51.2, 53.6));
+  segs.forEach(([m, col, lab]) => {
+    const vis = clamp((k2 * 47.5 - acc) / m);
+    if (vis > 0) {
+      ctx.save(); ctx.globalAlpha = a; box(x, 490, m * SC * vis, 90, 8, col); ctx.restore();
+      if (vis > 0.9) text(lab, x + m * SC / 2, 535, { size: 24, color: C.bg, alpha: a, maxW: m * SC - 10 });
+    }
+    x += m * SC; acc += m;
+  });
+  text('47.5 min', X0 + 47.5 * SC + 20, 535, { size: 40, color: C.accent, align: 'left', alpha: a * prog(t, 53.4, 53.9) });
+  // gap highlight
+  const g = ease(prog(t, 54, 55));
+  if (g > 0) {
+    ctx.save(); ctx.globalAlpha = a * g; ctx.strokeStyle = C.green; ctx.lineWidth = 4; ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.moveTo(X0 + 47.5 * SC, 280); ctx.lineTo(X0 + 47.5 * SC, 600); ctx.moveTo(X0 + 60.6 * SC, 280); ctx.lineTo(X0 + 60.6 * SC, 600); ctx.stroke();
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha = a * g; box(700, 650, 520, 150, 75, C.green); ctx.restore();
+    text('13 min sooner', 960, 708, { size: 54, color: C.bg, alpha: a * g });
+    text('into hospital care', 960, 762, { size: 32, color: C.bg, alpha: a * g });
+  }
+  caption('47.5 min (simulated) vs 60.6 min (live)', a * ease(prog(t, 50.6, 51.4)), '30 min of buffers (gold) added to the simulation only');
+  footnote(a);
+}
+
+function sScore(t) {                // 58 - 66
+  const a = env(t, 58, 66);
+  brandTag(a);
+  headline('Simulation results on real 108 call data', a);
+  const k = ease(prog(t, 58.4, 59.4));
+  ctx.save(); ctx.globalAlpha = a * k; box(260, 200, 1400, 300, 28, 'rgba(61,220,132,0.12)', C.green, 4); ctx.restore();
+  text('13 min sooner', 960, 285, { size: 110, color: C.green, alpha: a * k });
+  text('at the patient\'s side', 960, 375, { size: 46, alpha: a * k });
+  text('Live 108: 22.6 min   →   QUBO (simulated): 9.8 min   ·   −57%', 960, 445, { size: 32, color: C.dim, weight: 'normal', alpha: a * k });
+  const cards = [['Scene → hospital', '−40%', '38.0 → 22.7 min (incl. +15 at scene)'], ['Call → hospital care', '−22%', '60.6 → 47.5 min (incl. +30 buffers)']];
+  cards.forEach(([h, big, sub], i) => {
+    const ck = a * ease(prog(t, 59.4 + i * 0.6, 60.2 + i * 0.6));
+    const x = 260 + i * 720;
+    ctx.save(); ctx.globalAlpha = ck; box(x, 540, 680, 330, 24, C.bg2, '#2A3A5C', 2); ctx.restore();
+    text(h, x + 340, 600, { size: 38, alpha: ck });
+    text(big, x + 340, 710, { size: 100, color: C.accent, alpha: ck });
+    text(sub, x + 340, 815, { size: 28, color: C.dim, weight: 'normal', alpha: ck });
+  });
+  caption('Simulated: 13 minutes sooner at the patient\'s side', a * ease(prog(t, 58.6, 59.4)), 'and sooner all the way to the hospital');
+  footnote(a);
+}
+
+function sHow(t) {                  // 66 - 72
+  const a = env(t, 66, 72);
+  brandTag(a);
+  headline('How it works', a);
+  const steps = [['🗂️', '108 call records', '+ ambulance locations'], ['🧮', 'Arohak', 'QUBO model'], ['ATOM', 'Quanfluence', 'Ising machine'], ['🚑', 'Best ambulance', '+ best route']];
+  steps.forEach((s, i) => {
+    const ap = a * ease(prog(t, 66.4 + i * 0.6, 67.2 + i * 0.6));
+    const x = 150 + i * 430, y = 300;
+    ctx.save(); ctx.globalAlpha = ap;
+    box(x, y, 330, 300, 24, i === 2 ? 'rgba(61,214,245,0.14)' : C.bg2, i === 1 || i === 2 ? C.accent : '#2A3A5C', 3);
+    if (s[0] === 'ATOM') atom(x + 165, y + 95, 48, t); else emoji(s[0], x + 165, y + 95, 76);
+    ctx.restore();
+    text(s[1], x + 165, y + 200, { size: 36, alpha: ap });
+    text(s[2], x + 165, y + 248, { size: 32, color: i === 1 || i === 2 ? C.accent : C.dim, weight: 'normal', alpha: ap });
+    if (i < 3) text('➜', x + 380, y + 150, { size: 56, color: C.gold, alpha: ap });
+  });
+  caption('Arohak models dispatch and routing as one optimisation', a * ease(prog(t, 66.6, 67.4)), "Quanfluence's Ising machine solves it");
+}
+
+function sRoad(t) {                 // 72 - 78
+  const a = env(t, 72, 78);
+  brandTag(a);
+  headline('What comes next', a);
+  const nodes = [['Simulation on', 'real 108 data', true], ['Live 108', 'trial', false], ['112: police, fire', '& ambulance as one', false]];
+  const xs = [420, 960, 1500], y = 470;
+  const lk = ease(prog(t, 72.6, 75));
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#2A3A5C'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(xs[2], y); ctx.stroke();
+  ctx.strokeStyle = C.accent; ctx.setLineDash([16, 12]); ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(lerp(xs[0], xs[2], lk), y); ctx.stroke(); ctx.restore();
+  nodes.forEach(([l1, l2, done], i) => {
+    const np = a * ease(prog(t, 72.4 + i * 0.8, 73.2 + i * 0.8));
+    ctx.save(); ctx.globalAlpha = np;
+    ctx.fillStyle = done ? C.green : C.bg2; ctx.strokeStyle = done ? C.green : C.accent; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(xs[i], y, 70, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+    if (done) text('✓', xs[i], y + 4, { size: 72, color: C.bg, alpha: np });
+    else if (i === 1) emoji('🚑', xs[i], y + 2, 64, np);
+    else text('112', xs[i], y + 2, { size: 52, color: C.gold, alpha: np });
+    text(done ? 'DONE' : 'NEXT', xs[i], y - 115, { size: 26, color: done ? C.green : C.gold, alpha: np });
+    text(l1, xs[i], y + 125, { size: 36, alpha: np });
+    text(l2, xs[i], y + 170, { size: 36, alpha: np });
+  });
+  caption('Simulation done. Next: a live 108 trial, then 112', a * ease(prog(t, 72.6, 73.4)));
+}
+
+function sClose(t) {                // 78 - 83
+  const a = env(t, 78, 83, 0.8);
+  orbits(380, a, t);
+  lockup(200, a, 76);
+  text('108 simulation: 13 min sooner to the patient', 960, 500, { size: 44, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 78.6, 79.4)) });
+  const ba = a * ease(prog(t, 79.4, 80.2));
+  ctx.save(); ctx.globalAlpha = ba; box(660, 640, 600, 100, 50, C.accent); ctx.restore();
+  text('Visit our joint stall', 960, 692, { size: 42, color: C.bg, alpha: ba });
+}
+
+const DURATION = 83;
+window.DURATION = DURATION;
+window.render = function (t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(960, 540, 100, 960, 540, 1100);
+  g.addColorStop(0, 'rgba(30,60,120,0.35)'); g.addColorStop(1, 'rgba(8,17,32,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (t < 6) sTitle(t);
+  else if (t < 13) sCall(t);
+  else if (t < 50) sSplit(t);
+  else if (t < 58) sBars(t);
+  else if (t < 66) sScore(t);
+  else if (t < 72) sHow(t);
+  else if (t < 78) sRoad(t);
+  else sClose(t);
+  ctx.fillStyle = 'rgba(61,214,245,0.5)'; ctx.fillRect(0, H - 4, W * t / DURATION, 4);
+};
+document.fonts.ready.then(() => { window.READY = true; });
+</script>
+</body></html>

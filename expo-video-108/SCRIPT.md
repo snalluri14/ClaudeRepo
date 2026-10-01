@@ -80,3 +80,20 @@
 - No unverified speed claim is made for the solver ("in moments" has been removed). If the deck has a measured solver time, we can add it.
 - The video uses *QUBO routing* and *Ising machine*, never "quantum computer".
 - The map and routes are labelled *illustrative*. Only the minutes are real data.
+
+---
+
+## Built video: `arohak_108_simulation_pilot.mp4`
+
+1080p, 83 seconds, loops. Scenes 4–7 run as one race on a **single shared clock** that starts at the 108 call, so both sides can be compared at every moment. When reading the voice-over live, use these cue points:
+
+| Video time | Cue |
+|---|---|
+| 0:18 | Race starts (both clocks at 0) |
+| 0:25 | QUBO (simulated) reaches the patient at 9.8 min |
+| 0:29 | Live 108 reaches the patient at 22.6 min, with the "13 min sooner (−57%)" badge |
+| 0:31 | QUBO: +15 min at the scene, leaves at 24.8 |
+| 0:36 | QUBO reaches hospital at 32.5 |
+| 0:38 | QUBO: +15 min handover, patient in care at 47.5 (0:42) |
+| 0:48 | Live 108 reaches hospital at 60.6, with the "13 min sooner into hospital care (−22%)" badge |
+| 0:50 | Timeline bars · 0:58 Scorecard · 1:06 How it works · 1:12 Roadmap · 1:18 Close |
