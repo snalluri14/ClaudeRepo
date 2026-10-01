@@ -6,7 +6,7 @@
 **Partners on screen:** Government of Andhra Pradesh · Arohak · Quanfluence (quanfluence.com)
 
 ### Branding: both partner logos appear throughout the video
-- **Files:** `assets/arohak-logo.jpg` (Arohak, "Purpose. People. Innovation.") and `assets/quanfluence-logo.png` (Quanfluence).
+- **Files:** `assets/arohak-logo.jpg` (Arohak, "Purpose. People. Innovation.") and, for Quanfluence, `assets/quanfluence-logo.svg` (vector master), `assets/quanfluence-logo-hires.png` (3000 px, transparent) and `assets/quanfluence-logo-white.png` (3000 px, white, transparent, for dark scenes). The original vector PDF is `assets/quanfluence-logo-original.pdf`.
 - **Persistent logo bug (0:00 to the end):** Place the Arohak and Quanfluence logos side by side in the **top-right corner**, separated by a thin vertical divider. Use about 6–8% of the frame height and 80–90% opacity, with a 40 px safe margin. Show them on every scene, using the Arohak icon plus wordmark only (no tagline) to keep the bug compact.
 - **Dark and night scenes (Scenes 1, 3):** Put the logo bug on a soft white rounded pill, or use white/reversed versions, so the navy logos stay readable.
 - **Full-size logo moments:** The opening sting, Scene 6 (Partnership) and the final title card. On these, the corner bug fades out so the logos never appear twice in one frame.
@@ -143,4 +143,4 @@ Supporting badges: **391 live API dispatch requests** · **99.2% success rate** 
 4. **Optional local touch:** Open Scene 1 with a short Telugu greeting such as "నమస్కారం" in the voice-over, or add Telugu subtitles for the Vijayawada audience.
 5. **Shorter cut (~90 sec):** Use the Opening Sting and Scenes 1, 2 (first two lines only), 3 (first two lines only), 5, 6 and 7. Keep the partner credit and the logo bug.
 6. **Partner credits:** The script credits Arohak and Quanfluence. The status deck also names Quurium and NTRVST as validating teams. Confirm whether they should appear on screen too.
-7. **Logo files needed:** The Quanfluence logo provided is small (261×71 px) and will look blurry at full size. Get an SVG or a PNG at least 2000 px wide from Quanfluence. The Arohak logo is a JPEG on a white background, so ask for a transparent PNG or SVG, plus white/reversed versions of both logos for dark scenes.
+7. **Logo files:** Quanfluence is covered. Its vector PDF has been exported to SVG, a 3000 px transparent PNG and a white version, all sharp at full screen. Arohak is still a JPEG on a white background, so ask for a transparent PNG or SVG and a white/reversed version for the dark scenes.
