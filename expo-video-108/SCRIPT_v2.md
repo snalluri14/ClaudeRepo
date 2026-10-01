@@ -18,7 +18,7 @@
 | 5 | 0:23–0:30 | Everything fades except one huge number | **13 minutes sooner.** · smaller: *In an emergency, 13 minutes can change everything.* | "Thirteen minutes sooner. In an emergency, thirteen minutes can change everything." |
 | 6 | 0:30–0:38 | Two clean bars: 60.6 (grey) vs 47.5 (cyan + gold buffer segments) | **And sooner into hospital care: 47.5 vs 60.6 min** · small: *even after adding 30 min of buffer to our side only* | "And all the way to hospital care, it's still 13 minutes sooner, even after we add thirty minutes of buffer to our own numbers." |
 | 7 | 0:38–0:46 | Many pins and many ambulances appear, with tangled lines that snap into a clean set of routes | **Many calls. Many ambulances. One best plan.** | "Every minute, 108 must match many calls with many ambulances. That's a huge puzzle." |
-| 8 | 0:46–0:52 | Simple 3 icons: puzzle → **Arohak QUBO model** → **Quanfluence Ising machine** → ✓ | **Arohak models it. Quanfluence's Ising machine solves it.** | "Arohak turns it into a QUBO model. Quanfluence's Ising machine solves it." |
+| 8 | 0:46–0:52 | Simple 3 icons: puzzle → **Arohak QUBO model** → **Quanfluence Ising machine** → ✓ best plan (ambulance + route) | **Arohak models it. Quanfluence's Ising machine solves it.** | "Arohak turns it into a QUBO model. Quanfluence's Ising machine solves it." |
 | 9 | 0:52–0:57 | Roadmap: ✓ Simulation → Live 108 trial → **112** | **Tested on real 108 data. Next: a live trial, then 112.** | "Tested on real 108 data. Next, a live trial, and then 112." |
 | 10 | 0:57–1:02 | Closing lockup; the "13" glows once more | **13 minutes sooner.** · **AROHAK × QUANFLUENCE** · *Visit our joint stall* | "Arohak and Quanfluence. Thirteen minutes sooner. Visit our joint stall." |
 

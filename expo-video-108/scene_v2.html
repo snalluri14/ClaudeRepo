@@ -1,0 +1,351 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#050A16}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080;
+const ctx = document.getElementById('c').getContext('2d');
+const F = '"Liberation Sans", "DejaVu Sans", "Noto Color Emoji", sans-serif';
+const C = {
+  bg: '#050A16', bg2: '#0E1B33', grid: '#13213F', text: '#F2F6FC', dim: '#9AACC8',
+  accent: '#3DD6F5', gold: '#F5B83D', live: '#8A97AD', red: '#FF4B4B', green: '#3DDC84',
+};
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+function env(t, a, b, f = 0.5) { return Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b)); }
+function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+function text(str, x, y, { size = 48, color = C.text, weight = 'bold', align = 'center', alpha = 1, maxW = 0, style = '' } = {}) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = color;
+  ctx.font = `${style} ${weight} ${size}px ${F}`;
+  if (maxW) { const w = ctx.measureText(str).width; if (w > maxW) { size = Math.floor(size * maxW / w); ctx.font = `${style} ${weight} ${size}px ${F}`; } }
+  ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(str, x, y); ctx.restore();
+}
+function emoji(ch, x, y, size, alpha = 1) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = '#fff';
+  ctx.font = `${size}px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ch, x, y); ctx.restore();
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function box(x, y, w, h, r, fill, stroke, lw = 3) {
+  if (fill) { ctx.fillStyle = fill; rrect(x, y, w, h, r); ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; rrect(x, y, w, h, r); ctx.stroke(); }
+}
+function lowerThird(str, alpha, sub, subColor = C.dim) {
+  if (alpha <= 0) return;
+  const g = ctx.createLinearGradient(0, 820, 0, 1080);
+  g.addColorStop(0, 'rgba(5,10,22,0)'); g.addColorStop(0.35, 'rgba(5,10,22,0.92)'); g.addColorStop(1, 'rgba(5,10,22,0.98)');
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.fillRect(0, 820, W, 260); ctx.restore();
+  text(str, 960, sub ? 925 : 950, { size: 64, alpha, maxW: 1760 });
+  if (sub) text(sub, 960, 995, { size: 32, color: subColor, weight: 'normal', alpha, maxW: 1760 });
+}
+function footnote(alpha) {
+  text('Illustrative scenario. Average minutes per call: live 108 data vs QUBO routing simulated on the same calls (+15 min at scene & +15 min handover added to QUBO only).',
+       960, 1058, { size: 19, color: '#7F90AE', weight: 'normal', alpha, maxW: 1840 });
+}
+function badge(alpha) {
+  if (alpha <= 0) return;
+  const s = 'SIMULATION ON REAL 108 CALL DATA';
+  ctx.font = `bold 24px ${F}`; const w = ctx.measureText(s).width + 40;
+  ctx.save(); ctx.globalAlpha = alpha; box(W - 60 - w, 40, w, 48, 24, 'rgba(61,214,245,0.15)', C.accent, 2); ctx.restore();
+  text(s, W - 60 - w / 2, 65, { size: 24, color: C.accent, alpha });
+}
+function brandTag(alpha) {
+  let x = 60;
+  for (const [str, color] of [['AROHAK', C.accent], ['  ×  ', C.gold], ['QUANFLUENCE', C.accent]]) {
+    text(str, x, 64, { size: 24, color, align: 'left', alpha: alpha * 0.85 });
+    ctx.font = `bold 24px ${F}`; x += ctx.measureText(str).width;
+  }
+}
+function atom(x, y, r, t, color = C.accent) {
+  ctx.strokeStyle = color; ctx.lineWidth = 4;
+  for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.35, t * 1.5 + q * Math.PI / 3, 0, 7); ctx.stroke(); }
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r * 0.18, 0, 7); ctx.fill();
+}
+
+// ---------- village map ----------
+const BASE = [360, 720], PIN = [1320, 330];
+const GREY = [BASE, [360, 470], [680, 470], [680, 720], [1010, 720], [1010, 560], [1180, 560], [1180, 330], PIN];
+const CYAN = [BASE, [620, 600], [900, 470], [1120, 380], PIN];
+function pathLen(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+function sub(p, f) {
+  const out = [p[0]]; let d = clamp(f) * pathLen(p);
+  for (let i = 1; i < p.length; i++) {
+    const s = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+    if (d >= s) { out.push(p[i]); d -= s; } else { const k = s ? d / s : 0; out.push([lerp(p[i - 1][0], p[i][0], k), lerp(p[i - 1][1], p[i][1], k)]); break; }
+  }
+  return out;
+}
+function stroke(p, color, w, dash) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); ctx.restore();
+}
+function drawVillage(a) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  // roads
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 14; ctx.lineCap = 'round';
+  const roads = [[[120, 470], [1800, 470]], [[120, 720], [1800, 720]], [[360, 160], [360, 820]], [[680, 160], [680, 820]],
+                 [[1010, 160], [1010, 820]], [[1180, 160], [1180, 820]], [[120, 330], [1800, 330]], [[1010, 560], [1800, 560]], [[360, 720], [1320, 330]]];
+  roads.forEach(([p, q]) => { ctx.beginPath(); ctx.moveTo(...p); ctx.lineTo(...q); ctx.stroke(); });
+  // houses
+  for (let i = 0; i < 70; i++) {
+    const x = 140 + hash(i) * 1640, y = 180 + hash(i + 99) * 620;
+    ctx.fillStyle = 'rgba(120,140,180,0.16)'; ctx.fillRect(x, y, 16, 14);
+  }
+  ctx.restore();
+  emoji('🏥', BASE[0] - 0, BASE[1] + 2, 1, 0);
+  text('Ambulance base', BASE[0], BASE[1] + 62, { size: 26, color: C.dim, alpha: a });
+}
+function drawPin(t, a, ok) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  if (!ok) { const p = (t * 1.1) % 1; ctx.strokeStyle = C.red; ctx.lineWidth = 5; ctx.globalAlpha = a * (1 - p); ctx.beginPath(); ctx.arc(PIN[0], PIN[1], 30 + p * 80, 0, 7); ctx.stroke(); ctx.globalAlpha = a; }
+  ctx.fillStyle = ok ? C.green : C.red; ctx.beginPath(); ctx.arc(PIN[0], PIN[1], 30, 0, 7); ctx.fill();
+  ctx.restore();
+  text(ok ? '✓' : '!', PIN[0], PIN[1] + 2, { size: 38, alpha: a });
+}
+function amb(x, y, col, a) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.bg; ctx.strokeStyle = col; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(x, y, 38, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+  emoji('🚑', x, y + 2, 42, a);
+}
+function bigClock(v, col, a, label) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; box(1400, 600, 440, 190, 24, 'rgba(5,10,22,0.85)', col, 3); ctx.restore();
+  text(v.toFixed(1), 1650, 680, { size: 92, color: col, alpha: a, align: 'right' });
+  text('min', 1715, 700, { size: 36, color: C.dim, weight: 'normal', alpha: a });
+  text(label, 1620, 760, { size: 24, color: C.dim, weight: 'normal', alpha: a });
+}
+function pointAt(p, f) { const s = sub(p, f); return s[s.length - 1]; }
+
+// ---------- scenes ----------
+function s1(t) {                    // 0 - 5  2:14 AM call
+  const a = env(t, 0, 5, 0.6);
+  const shake = t > 0.6 && t < 3.6 ? Math.sin(t * 50) * 10 : 0;
+  text('2:14 AM', 960, 300, { size: 140, color: C.red, alpha: a * ease(prog(t, 0.2, 0.9)), weight: 'bold' });
+  for (let i = 0; i < 3; i++) {
+    const p = ((t * 0.9) + i / 3) % 1;
+    ctx.save(); ctx.globalAlpha = a * (1 - p) * 0.6 * prog(t, 0.6, 1); ctx.strokeStyle = C.accent; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(960, 560, 90 + p * 160, 0, 7); ctx.stroke(); ctx.restore();
+  }
+  emoji('📱', 960 + shake, 560, 150, a * ease(prog(t, 0.4, 1)));
+  text('A call to 108.', 960, 830, { size: 72, alpha: a * ease(prog(t, 1.6, 2.4)) });
+}
+
+function s2(t) {                    // 5 - 10  "My father has collapsed"
+  const a = env(t, 5, 10);
+  drawVillage(a * 0.9);
+  drawPin(t, a * ease(prog(t, 5.3, 6)), false);
+  text('Distress location', PIN[0], PIN[1] + 72, { size: 28, color: C.red, alpha: a * ease(prog(t, 5.6, 6.2)) });
+  // quote card
+  const q = a * ease(prog(t, 6, 6.8));
+  ctx.save(); ctx.globalAlpha = q; box(260, 120, 1400, 150, 24, 'rgba(5,10,22,0.9)', C.red, 2); ctx.restore();
+  text('“My father has collapsed. Please hurry.”', 960, 195, { size: 60, alpha: q, style: 'italic', maxW: 1340 });
+  lowerThird('Every minute counts.', a * ease(prog(t, 7.4, 8)));
+}
+
+function s3(t) {                    // 10 - 16  today 22.6
+  const a = env(t, 10, 16.4);
+  drawVillage(a);
+  const k = prog(t, 11, 15.4);
+  stroke(GREY, 'rgba(138,151,173,0.25)', 10, [14, 14]);
+  stroke(sub(GREY, k), C.live, 10);
+  drawPin(t, a, false);
+  const pt = pointAt(GREY, k); amb(pt[0], pt[1], C.live, a);
+  bigClock(22.6 * k, C.text, a, 'call → ambulance at patient');
+  lowerThird('Today, help arrives in 22.6 minutes.', a * ease(prog(t, 10.4, 11)), 'Average, live 108 data');
+  footnote(a);
+}
+
+function s4(t) {                    // 16 - 23  rewind + QUBO 9.8
+  const a = env(t, 16, 23);
+  drawVillage(a);
+  const rw = prog(t, 16, 17.2);            // rewind of the grey run
+  if (rw < 1) {
+    const k = 1 - ease(rw);
+    stroke(sub(GREY, k), C.live, 10);
+    const pt = pointAt(GREY, k); amb(pt[0], pt[1], C.live, a);
+    bigClock(22.6 * k, C.text, a, 'rewinding…');
+    // scanlines
+    ctx.save(); ctx.globalAlpha = a * 0.12 * (1 - rw); ctx.fillStyle = '#fff';
+    for (let y = (t * 900) % 24; y < H; y += 24) ctx.fillRect(0, y, W, 2); ctx.restore();
+    text('⏪', 960, 540, { size: 160, alpha: a * Math.sin(rw * Math.PI) });
+  } else {
+    const k = ease(prog(t, 17.6, 21));
+    stroke(sub(GREY, 1), 'rgba(138,151,173,0.18)', 8, [14, 14]);
+    stroke(sub(CYAN, k), C.accent, 12);
+    const pt = pointAt(CYAN, k); amb(pt[0], pt[1], C.accent, a);
+    bigClock(9.8 * k, k >= 1 ? C.green : C.accent, a, 'call → ambulance at patient');
+  }
+  drawPin(t, a, t > 21);
+  badge(a * ease(prog(t, 17.4, 18)));
+  lowerThird(t < 17.4 ? 'Same call. Same village.' : 'With QUBO routing: 9.8 minutes.', a * ease(prog(t, 16.3, 16.8)),
+             t < 17.4 ? '' : 'Simulated on real 108 call data', C.accent);
+  footnote(a);
+}
+
+function s5(t) {                    // 23 - 30  13 minutes sooner
+  const a = env(t, 23, 30);
+  const k = ease(prog(t, 23.2, 24.2));
+  const glow = 0.5 + 0.5 * Math.sin(t * 3);
+  ctx.save(); ctx.globalAlpha = a * k; ctx.shadowColor = C.green; ctx.shadowBlur = 40 + glow * 30;
+  text('13', 960, 420, { size: 360, color: C.green }); ctx.restore();
+  text('minutes sooner.', 960, 650, { size: 90, alpha: a * ease(prog(t, 23.8, 24.6)) });
+  text('22.6 → 9.8 minutes to reach the patient', 960, 750, { size: 36, color: C.dim, weight: 'normal', alpha: a * ease(prog(t, 24.4, 25.2)) });
+  text('In an emergency, 13 minutes can change everything.', 960, 900, { size: 46, color: C.gold, alpha: a * ease(prog(t, 25.4, 26.4)) });
+  badge(a);
+  footnote(a);
+}
+
+function s6(t) {                    // 30 - 38  call → hospital care
+  const a = env(t, 30, 38);
+  text('And sooner into hospital care', 960, 170, { size: 70, alpha: a });
+  text('From the 108 call to the patient in hospital care', 960, 240, { size: 32, color: C.dim, weight: 'normal', alpha: a });
+  const X0 = 440, SC = 1150 / 60.6, k = ease(prog(t, 30.6, 33));
+  text('Today', 400, 395, { size: 40, align: 'right', alpha: a });
+  text('live 108 data', 400, 438, { size: 24, color: C.dim, weight: 'normal', align: 'right', alpha: a });
+  ctx.save(); ctx.globalAlpha = a; box(X0, 365, 60.6 * SC * k, 100, 14, C.live); ctx.restore();
+  text('60.6 min', X0 + 60.6 * SC * k + 24, 415, { size: 48, align: 'left', alpha: a * prog(t, 32.6, 33) });
+  text('QUBO routing', 400, 575, { size: 40, align: 'right', color: C.accent, alpha: a });
+  text('simulated', 400, 618, { size: 24, color: C.dim, weight: 'normal', align: 'right', alpha: a });
+  const segs = [[9.8, C.accent, '9.8'], [15, C.gold, '+15 at scene'], [7.7, C.accent, '7.7'], [15, C.gold, '+15 handover']];
+  const k2 = ease(prog(t, 31.4, 34)); let x = X0, acc = 0;
+  segs.forEach(([m, col, lab]) => {
+    const vis = clamp((k2 * 47.5 - acc) / m);
+    if (vis > 0) { ctx.save(); ctx.globalAlpha = a; box(x, 545, m * SC * vis, 100, 10, col); ctx.restore();
+      if (vis > 0.95) text(lab, x + m * SC / 2, 595, { size: 24, color: C.bg, alpha: a, maxW: m * SC - 12 }); }
+    x += m * SC; acc += m;
+  });
+  text('47.5 min', X0 + 47.5 * SC + 24, 595, { size: 48, color: C.accent, align: 'left', alpha: a * prog(t, 33.6, 34) });
+  const g = a * ease(prog(t, 34.2, 35));
+  ctx.save(); ctx.globalAlpha = g; box(700, 700, 520, 110, 55, C.green); ctx.restore();
+  text('13 minutes sooner', 960, 756, { size: 50, color: C.bg, alpha: g });
+  lowerThird('47.5 vs 60.6 minutes', a * ease(prog(t, 30.5, 31.2)), 'Even after adding 30 min of buffer (gold) to our side only', C.gold);
+  badge(a);
+  footnote(a);
+}
+
+// many calls, many ambulances
+const PINS = [], AMBS = [];
+(() => { let n = 0; const all = [];
+  const place = (arr, count) => { while (arr.length < count && n < 5000) { n++;
+    const q = [220 + hash(n * 7 + 11) * 1480, 180 + hash(n * 11 + 13) * 600];
+    if (all.every(o => Math.hypot(o[0] - q[0], o[1] - q[1]) > 150)) { arr.push(q); all.push(q); } } };
+  place(PINS, 9); place(AMBS, 12); })();
+const BEST = (() => { const used = new Set(); return PINS.map(p => { let b = -1, bd = 1e9;
+  AMBS.forEach((q, i) => { if (used.has(i)) return; const d = Math.hypot(p[0] - q[0], p[1] - q[1]); if (d < bd) { bd = d; b = i; } }); used.add(b); return b; }); })();
+function s7(t) {                    // 38 - 46
+  const a = env(t, 38, 46);
+  const snap = ease(prog(t, 42, 43.2));
+  if (snap < 1) {
+    const bucket = Math.floor(t * 9);
+    ctx.save(); ctx.globalAlpha = a * (1 - snap) * 0.6 * prog(t, 39, 39.6); ctx.lineWidth = 2.5; ctx.setLineDash([8, 8]);
+    for (let n = 0; n < 40; n++) {
+      const p = PINS[Math.floor(hash(bucket * 31 + n) * PINS.length)], q = AMBS[Math.floor(hash(bucket * 17 + n * 3) * AMBS.length)];
+      ctx.strokeStyle = n % 2 ? C.red : C.live; ctx.beginPath(); ctx.moveTo(...q); ctx.lineTo(...p); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  if (snap > 0) {
+    ctx.save(); ctx.globalAlpha = a * snap; ctx.strokeStyle = C.accent; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    PINS.forEach((p, i) => { const q = AMBS[BEST[i]]; ctx.beginPath(); ctx.moveTo(...q); ctx.lineTo(...p); ctx.stroke(); });
+    ctx.restore();
+  }
+  AMBS.forEach((q, i) => {
+    const used = BEST.includes(i);
+    ctx.save(); ctx.globalAlpha = a * ease(prog(t, 38.3 + i * 0.05, 38.8 + i * 0.05)) * (snap > 0.5 && !used ? 0.35 : 1);
+    ctx.fillStyle = C.bg; ctx.strokeStyle = snap > 0.5 && used ? C.accent : C.live; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(q[0], q[1], 26, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+    emoji('🚑', q[0], q[1] + 1, 28, a * ease(prog(t, 38.3 + i * 0.05, 38.8 + i * 0.05)) * (snap > 0.5 && !used ? 0.35 : 1));
+  });
+  PINS.forEach((p, i) => {
+    const pa = a * ease(prog(t, 38.8 + i * 0.12, 39.3 + i * 0.12));
+    ctx.save(); ctx.globalAlpha = pa; ctx.fillStyle = snap > 0.9 ? C.green : C.red; ctx.beginPath(); ctx.arc(p[0], p[1], 18, 0, 7); ctx.fill(); ctx.restore();
+    text(snap > 0.9 ? '✓' : '!', p[0], p[1] + 1, { size: 22, alpha: pa });
+  });
+  lowerThird(t < 42 ? 'Many calls. Many ambulances.' : 'One best plan.', a * ease(prog(t, 38.4, 39)),
+             t < 42 ? 'Matching them well, every minute, is a huge puzzle' : 'Every call gets the best ambulance and route');
+}
+
+function s8(t) {                    // 46 - 52
+  const a = env(t, 46, 52);
+  brandTag(a);
+  const steps = [['🧩', 'The puzzle', 'calls + ambulances'], ['🧮', 'Arohak', 'QUBO model'], ['ATOM', 'Quanfluence', 'Ising machine'], ['✅', 'Best plan', 'ambulance + route']];
+  steps.forEach((s, i) => {
+    const ap = a * ease(prog(t, 46.3 + i * 0.55, 47 + i * 0.55));
+    const x = 150 + i * 430, y = 260;
+    ctx.save(); ctx.globalAlpha = ap;
+    box(x, y, 330, 330, 26, i === 1 || i === 2 ? 'rgba(61,214,245,0.12)' : C.bg2, i === 1 || i === 2 ? C.accent : '#22324F', 3);
+    if (s[0] === 'ATOM') atom(x + 165, y + 110, 56, t); else emoji(s[0], x + 165, y + 110, 90);
+    ctx.restore();
+    text(s[1], x + 165, y + 225, { size: 40, alpha: ap });
+    text(s[2], x + 165, y + 275, { size: 32, color: i === 1 || i === 2 ? C.accent : C.dim, weight: 'normal', alpha: ap });
+    if (i < 3) text('➜', x + 380, y + 165, { size: 60, color: C.gold, alpha: ap });
+  });
+  lowerThird('Arohak models it. Quanfluence\'s Ising machine solves it.', a * ease(prog(t, 46.5, 47.1)));
+}
+
+function s9(t) {                    // 52 - 57
+  const a = env(t, 52, 57);
+  brandTag(a);
+  const nodes = [['Simulation', 'on real 108 data', true], ['Live 108', 'trial', false], ['112', 'police · fire · ambulance', false]];
+  const xs = [420, 960, 1500], y = 430;
+  const lk = ease(prog(t, 52.4, 54.6));
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#22324F'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(xs[2], y); ctx.stroke();
+  ctx.strokeStyle = C.accent; ctx.setLineDash([16, 12]); ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(lerp(xs[0], xs[2], lk), y); ctx.stroke(); ctx.restore();
+  nodes.forEach(([l1, l2, done], i) => {
+    const np = a * ease(prog(t, 52.3 + i * 0.7, 53 + i * 0.7));
+    ctx.save(); ctx.globalAlpha = np; ctx.fillStyle = done ? C.green : C.bg2; ctx.strokeStyle = done ? C.green : C.accent; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(xs[i], y, 80, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+    if (done) text('✓', xs[i], y + 4, { size: 84, color: C.bg, alpha: np });
+    else if (i === 1) emoji('🚑', xs[i], y + 2, 70, np);
+    else text('112', xs[i], y + 2, { size: 60, color: C.gold, alpha: np });
+    text(done ? 'DONE' : 'NEXT', xs[i], y - 125, { size: 28, color: done ? C.green : C.gold, alpha: np });
+    text(l1, xs[i], y + 140, { size: 42, alpha: np });
+    text(l2, xs[i], y + 190, { size: 30, color: C.dim, weight: 'normal', alpha: np });
+  });
+  lowerThird('Tested on real 108 data. Next: a live trial, then 112.', a * ease(prog(t, 52.4, 53)));
+}
+
+function s10(t) {                   // 57 - 62
+  const a = env(t, 57, 62, 0.7);
+  const glow = 0.5 + 0.5 * Math.sin(t * 3);
+  ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = C.green; ctx.shadowBlur = 30 + glow * 30;
+  text('13 minutes sooner.', 960, 250, { size: 96, color: C.green }); ctx.restore();
+  text('AROHAK TECHNOLOGIES', 960, 430, { size: 76, alpha: a * ease(prog(t, 57.5, 58.3)) });
+  text('×', 960, 505, { size: 46, color: C.gold, alpha: a * ease(prog(t, 57.5, 58.3)) });
+  text('QUANFLUENCE', 960, 580, { size: 76, alpha: a * ease(prog(t, 57.5, 58.3)) });
+  const ba = a * ease(prog(t, 58.4, 59.2));
+  ctx.save(); ctx.globalAlpha = ba; box(660, 720, 600, 100, 50, C.accent); ctx.restore();
+  text('Visit our joint stall', 960, 772, { size: 44, color: C.bg, alpha: ba });
+}
+
+const DURATION = 62;
+window.DURATION = DURATION;
+window.render = function (t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(960, 480, 80, 960, 480, 1100);
+  g.addColorStop(0, 'rgba(25,50,105,0.30)'); g.addColorStop(1, 'rgba(5,10,22,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (t < 5) s1(t);
+  else if (t < 10) s2(t);
+  else if (t < 16) s3(t);
+  else if (t < 23) s4(t);
+  else if (t < 30) s5(t);
+  else if (t < 38) s6(t);
+  else if (t < 46) s7(t);
+  else if (t < 52) s8(t);
+  else if (t < 57) s9(t);
+  else s10(t);
+};
+document.fonts.ready.then(() => { window.READY = true; });
+</script>
+</body></html>
