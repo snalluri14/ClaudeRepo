@@ -87,7 +87,16 @@ This is your core argument. Memorize the numbers.
 
 ## 4. Use Case 1: AP Government Dial 112 Emergency Response (Pilot)
 
-> ⚠️ Fill every `[CONFIRM]` with real figures from the delivery team before the summit. Adjust the problem framing below if the pilot focused on something different (e.g., patrol planning vs. live dispatch).
+> ✅ **Confirmed:** The 112 work is a **pilot** (not yet a statewide production rollout), and the optimization was formulated as a **QUBO**.
+> ⚠️ Still fill the remaining `[CONFIRM]` items (results, solver platform, scale) with real figures from the delivery team.
+
+### How to talk about pilot status (say this confidently, not apologetically)
+Calling it a pilot makes you *more* credible. Experts know quantum optimization is at the pilot stage everywhere in the world, so "we're in production statewide" would make them suspicious.
+- ✅ *"We completed a pilot with AP Government on Dial 112."*
+- ✅ *"The pilot validated the QUBO formulation and the hybrid approach on real 112 data. The next step is a phased scale-up."*
+- ✅ *"It's a pilot today. We designed the architecture from day one so it can scale statewide."*
+- ❌ Don't say "deployed across AP," "live in production," or "112 now runs on quantum."
+- `[CONFIRM]` the pilot mode: **historical/replay data**, **shadow mode** (running alongside dispatchers without controlling dispatch), or **live recommendations in selected zones**. Use only the one that's true.
 
 ### The problem (in plain words)
 Dial 112 is the single emergency number for police, fire and ambulance. At any moment, the control room has:
@@ -105,12 +114,21 @@ Dial 112 is the single emergency number for police, fire and ambulance. At any m
 
 ### How we solved it (your talk track)
 1. **Data integration layer (your strength):** Real-time feeds from the 112 CAD/call-centre system, vehicle GPS/AVL, maps and traffic, historical incident data, all brought together through an integration/API layer. *"Most of the hard work in quantum projects is actually this layer. Quantum is only as good as the data you feed it."*
-2. **Problem formulation:** We encoded assignment, routing and coverage as a **QUBO**: binary variables like "vehicle *i* assigned to incident *j*," with penalties for constraint violations (wrong vehicle type, out of jurisdiction, exceeding response-time SLA) and objectives (minimize response time, maximize zone coverage, prioritize severity).
+2. **Problem formulation (QUBO, confirmed):** We encoded assignment, routing and coverage as a **QUBO** (Quadratic Unconstrained Binary Optimization): binary variables like "vehicle *i* assigned to incident *j*," with penalties for constraint violations (wrong vehicle type, out of jurisdiction, exceeding response-time SLA) and objectives (minimize response time, maximize zone coverage, prioritize severity).
 3. **Decomposition:** We split the state into zones/clusters classically, so each sub-problem fits the size today's quantum hardware handles well.
 4. **Hybrid solve:** We send sub-problems to a quantum/hybrid solver `[CONFIRM: platform, e.g., D-Wave hybrid / IBM Qiskit QAOA / quantum-inspired GPU solver]`, with a **classical solver running in parallel as baseline and fallback**.
-5. **Decision and feedback:** The best solution goes to the dispatcher's screen as a **recommendation** (a human stays in the loop), and outcomes feed back to improve forecasting.
+5. **Validation and comparison:** In the pilot, every QUBO solution was checked classically for feasibility and compared with current dispatch outcomes and a classical baseline. In a scaled rollout, the best solution would go to the dispatcher's screen as a **recommendation** (a human always stays in the loop). `[CONFIRM: whether pilot recommendations were shown to dispatchers or evaluated offline.]`
 
-### Results to quote: `[CONFIRM ALL]`
+### Explaining the QUBO in simple terms (you *will* be asked)
+> "QUBO means we express the whole problem as yes/no decisions. For example: *does vehicle 7 go to incident 23? yes or no.* Each yes/no is a binary variable, which maps naturally to a qubit. Then we write one cost equation. Response time adds cost, and breaking a rule (wrong vehicle type, outside jurisdiction, two vehicles on one incident, one vehicle on two incidents) adds a large penalty. The solver's job is to find the combination of yes/no answers with the lowest total cost. A quantum annealer does this physically: the system naturally settles into its lowest-energy state, and that state is our best dispatch plan."
+
+**The formula, if someone technical asks:** minimize **xᵀQx**, where **x** is a vector of 0/1 decisions and **Q** is a matrix. The diagonal holds individual costs (e.g., travel time for vehicle *i* to incident *j*). The off-diagonal holds pairwise interactions (e.g., penalties when two decisions conflict).
+
+**Example constraint as a penalty:** "Each incident gets exactly one vehicle" becomes **P·(Σᵢ xᵢⱼ − 1)²**. This is zero when exactly one vehicle is assigned and positive otherwise. **P** is the penalty weight.
+
+**Why QUBO is the right fit:** It's the native input format for quantum annealers (D-Wave) and maps directly onto the Ising model. It's also the standard input for QAOA on gate-based machines and for quantum-inspired solvers. *"QUBO keeps us hardware-agnostic: the same formulation can run on an annealer, a gate-based machine, or a classical/quantum-inspired solver for benchmarking."*
+
+### Pilot results to quote: `[CONFIRM ALL]` (always say "in the pilot")
 - Average response time reduced by **[X]%** / **[X] minutes** in pilot zones
 - Coverage, meaning the share of the area reachable within the SLA: **[X]%** improvement
 - Scale: **[N] vehicles, [N] incidents/day, [districts]**
@@ -194,7 +212,7 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 - **The CM's track record:** Hyderabad's HITEC City and IT growth in the 1990s. The natural pitch is *"Quantum is to this decade what IT was to the 90s, and Andhra Pradesh is again moving first."*
 
 ### 60-second pitch for the CM
-> "Sir, Arohak is an Andhra Pradesh technology company working on practical quantum applications. We've already run a pilot with the AP Government on **Dial 112**, using hybrid quantum optimization to dispatch and position emergency vehicles more effectively so citizens get help faster. `[one CONFIRMED result]`.
+> "Sir, Arohak is an Andhra Pradesh technology company working on practical quantum applications. We've completed a pilot with the AP Government on **Dial 112**, using quantum optimization (QUBO-based) to dispatch and position emergency vehicles more effectively so citizens get help faster. `[one CONFIRMED result]`.
 > Our strength is making quantum *usable*: connecting quantum computers to real government and enterprise systems. As Quantum Valley comes up in Amaravati, we want to be the company that turns that hardware into real outcomes for AP citizens: emergency services, agriculture supply chains, power grid balancing, traffic. We'd welcome the opportunity to scale the 112 pilot statewide and to be a delivery partner for Quantum Valley use cases."
 
 **Keep it short.** Mention one result, one ask, one forward-looking line. Have a one-page leave-behind ready.
@@ -235,7 +253,7 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 *"As penalty terms. If a constraint is violated, the energy (cost) goes up. Tuning the penalty weights is one of the trickier parts: too low and you get infeasible answers, too high and the solver ignores the actual objective."* (This answer will impress people who know the field.)
 
 **Q8. What's the latency? Real-time dispatch needs seconds.**
-`[CONFIRM.]` *"Each optimization cycle runs in about [X] seconds end-to-end, including the cloud round-trip. For truly instant decisions, the system uses the latest optimized plan plus a fast rule, and the optimizer re-plans continuously in the background."*
+`[CONFIRM.]` *"In the pilot, each QUBO optimization cycle ran in about [X] seconds end-to-end. For a live rollout, the design is that instant decisions use the latest optimized plan plus a fast rule, while the optimizer re-plans continuously in the background every few seconds."*
 
 **Q9. Where is the data hosted? Is government data sent to foreign quantum clouds?**
 *"Very important question. Only anonymized mathematical problem representations (the QUBO matrices, just numbers) go to the solver. No personal or citizen data leaves the government environment. The data integration and formulation run within [state data centre / approved cloud]. And as domestic quantum infrastructure comes up in Amaravati, we can move to it."*
@@ -270,6 +288,18 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 
 **Q18. How will this help the common citizen?**
 *"Faster ambulance and police response through 112. Better crop logistics for farmers so less produce is wasted. Stable power supply with more solar. Quantum is the engine underneath; the citizen sees faster service."*
+
+**Q19a. Is the 112 system live / in production?**
+*"It's a pilot today. We validated the QUBO formulation and the hybrid approach on real 112 data `[CONFIRM: historical / shadow / selected zones]`, and the results were `[CONFIRM headline result]`. The next step is a phased rollout, and we're discussing that with the department."*
+
+**Q19b. Why isn't it in production yet? / What did the pilot prove?**
+*"A pilot is the right first step for any critical public-safety system. You never put emergency response on a new technology without proving it first. The pilot proved three things: the problem can be cleanly formulated as a QUBO, the hybrid solver gives `[comparable/better]` plans than the current method within the time window, and the integration with 112 data sources works. Scale-up is mainly about integrating all districts, hardening for 24×7 availability, and dispatcher training."*
+
+**Q19c. Why QUBO and not a standard MILP solver?**
+*"We ran a classical baseline too. QUBO gives us one formulation that runs on quantum annealers, gate-based machines via QAOA, and quantum-inspired solvers, so we can benchmark them side by side and switch as hardware improves. MILP stays as our classical comparison and fallback."*
+
+**Q19d. How many binary variables did your QUBO have?**
+`[CONFIRM.]` *"Around [N] variables per zone-level sub-problem. A full-state problem would be far larger, which is why we decompose. Vehicles × incidents grows fast: 50 × 50 is already 2,500 binary variables before routing and coverage terms."*
 
 **Q19. Can you scale the 112 pilot across the state?**
 *"Yes. The architecture was designed for that. Scaling means integrating all districts' feeds and running zone-level optimization in parallel. We can propose a phased rollout: [N] districts in phase 1."*
@@ -318,6 +348,8 @@ This is a *senior* response. Juniors bluff; VPs route.
 ## 11. Pre-summit checklist
 
 - [ ] Get **real 112 pilot metrics** from the delivery team and fill all `[CONFIRM]` placeholders
+- [ ] Confirm the **pilot mode** (historical replay / shadow / live in selected zones), the **QUBO size** (number of variables), and the **solver** used
+- [ ] Practise the **"explain QUBO simply"** answer (Section 4)
 - [ ] Confirm **exactly which solver/hardware** was used, and the qubit/variable counts
 - [ ] Confirm the **true status** of the second use case and whether the client can be named (Section 6)
 - [ ] Have the **quantum technical lead** at the stall, or available on call
@@ -337,8 +369,11 @@ WHY:   NP-hard problems → combinatorial explosion (30 stops = 10^32 routes)
        Classical heuristics slow down / lose quality at real-time scale
 HOW:   Integrate data → formulate QUBO → decompose → hybrid solve
        (quantum + classical baseline/fallback) → validate → write back
-112:   Fleet-wide dispatch + pre-positioning, not "nearest vehicle"
-       Result: [CONFIRM]% faster response, [CONFIRM]% better coverage
+112:   PILOT with AP Govt. Formulated as QUBO (yes/no: vehicle i → incident j)
+       Cost = response time + big penalties for broken rules → find min
+       Fleet-wide dispatch + pre-positioning, not "nearest vehicle"
+       Pilot result: [CONFIRM]% faster response, [CONFIRM]% better coverage
+       Next: phased statewide scale-up
 CPG:   SKU sequencing + inventory placement via SAP BTP integration
        Overnight planning → minutes re-planning [CONFIRM]
 EDGE:  "We make quantum usable: the bridge between qubits and business systems"
