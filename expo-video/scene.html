@@ -38,7 +38,9 @@ function caption(str, alpha, sub) {
   ctx.save(); ctx.globalAlpha = alpha;
   ctx.fillStyle = 'rgba(4,10,22,0.88)'; rrect(110, 930, 1700, sub ? 128 : 104, 18); ctx.fill();
   ctx.fillStyle = C.accent; ctx.fillRect(110, 948, 8, sub ? 92 : 68);
-  text(str, 960, sub ? 972 : 982, { size: 44 });
+  ctx.font = `bold 44px ${F}`;
+  const fit = Math.min(44, Math.floor(44 * 1620 / ctx.measureText(str).width));
+  text(str, 960, sub ? 972 : 982, { size: fit });
   if (sub) text(sub, 960, 1028, { size: 30, color: C.dim, weight: 'normal' });
   ctx.restore();
 }
@@ -47,8 +49,17 @@ function headline(str, alpha, sub) {
   if (sub) text(sub, 960, 150, { size: 32, color: C.accent, weight: 'normal', alpha });
 }
 function brandTag(alpha) {
-  text('AROHAK', 60, 48, { size: 26, color: C.accent, align: 'left', alpha: alpha * 0.9 });
-  text('TECHNOLOGIES', 178, 48, { size: 26, color: C.dim, weight: 'normal', align: 'left', alpha: alpha * 0.9 });
+  // joint co-brand, drawn piece by piece so spacing follows real text widths
+  let x = 60;
+  for (const [str, color, weight] of [['AROHAK', C.accent, 'bold'], ['  ×  ', C.gold, 'bold'], ['QUANFLUENCE', C.accent, 'bold']]) {
+    text(str, x, 48, { size: 26, color, weight, align: 'left', alpha: alpha * 0.9 });
+    ctx.font = `${weight} 26px ${F}`; x += ctx.measureText(str).width;
+  }
+}
+function lockup(y, alpha, size = 84) {
+  text('AROHAK TECHNOLOGIES', 960, y, { size, alpha });
+  text('×', 960, y + size * 0.95, { size: size * 0.6, color: C.gold, alpha });
+  text('QUANFLUENCE', 960, y + size * 1.9, { size, alpha });
 }
 
 // ---------- shared data: illustrative city ----------
@@ -158,9 +169,10 @@ function sTitle(t) {           // 0 - 7
     ctx.beginPath(); ctx.ellipse(960, 430, 420 + i * 80, 120 + i * 40, (t * 0.15) + i * 1.05, 0, 7); ctx.stroke();
   }
   ctx.restore();
-  text('AROHAK TECHNOLOGIES', 960, 400, { size: 96, alpha: a * k });
-  text('Quantum-inspired optimisation for decisions that cannot wait', 960, 500, { size: 44, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 1.5, 3)) });
-  text('From saving lives to running factories', 960, 640, { size: 40, color: C.gold, alpha: a * ease(prog(t, 3, 4.5)) });
+  lockup(250, a * k);
+  text('Joint partners in quantum-inspired optimisation', 960, 560, { size: 40, color: C.dim, weight: 'normal', alpha: a * ease(prog(t, 1.2, 2.4)) });
+  text('Decisions that cannot wait', 960, 660, { size: 48, color: C.accent, alpha: a * ease(prog(t, 2.4, 3.6)) });
+  text('From saving lives to running factories', 960, 740, { size: 40, color: C.gold, alpha: a * ease(prog(t, 3.4, 4.6)) });
 }
 
 function sProblem(t) {         // 7 - 16
@@ -239,11 +251,11 @@ function target(i, j) { return 1; }
 function sEngine(t) {          // 31 - 46
   const a = env(t, 31, 46);
   brandTag(a);
-  headline('How Arohak solves it', a, 'Quantum-inspired optimisation on an Ising machine');
+  headline('How Arohak and Quanfluence solve it', a, 'Quantum-inspired optimisation on an Ising machine');
   const boxes = [
     ['📞', 'Live calls +', 'vehicle GPS'],
-    ['🧮', 'Arohak converts it', 'into an energy model'],
-    ['ATOM', 'Ising machine', 'by Quanfluence'],
+    ['🧮', 'Arohak models it', 'as an energy problem'],
+    ['ATOM', 'Quanfluence', 'Ising machine'],
     ['✅', 'Best dispatch', 'plan in seconds'],
   ];
   boxes.forEach((bx, i) => {
@@ -294,7 +306,7 @@ function sEngine(t) {          // 31 - 46
   }
   const capA = a * ease(prog(t, 32, 32.8));
   if (t < 36.5) caption('Arohak turns the dispatch decision into an energy problem', capA);
-  else caption('The machine settles into its lowest-energy state: the best plan', capA,
+  else caption('Quanfluence\'s Ising machine settles to the lowest energy: the best plan', capA,
                'Like a ball rolling to the bottom of a valley, it finds the best answer fast');
 }
 
@@ -325,15 +337,17 @@ function sSolved(t) {          // 46 - 57
   ctx.save(); ctx.globalAlpha = pa;
   ctx.fillStyle = 'rgba(61,220,132,0.12)'; rrect(1380, 230, 450, 640, 20); ctx.fill();
   ctx.strokeStyle = C.amb; ctx.lineWidth = 3; rrect(1380, 230, 450, 640, 20); ctx.stroke();
-  text('DELIVERED WITH', 1605, 290, { size: 26, color: C.amb });
-  text('Government of', 1605, 360, { size: 40 });
-  text('Andhra Pradesh', 1605, 410, { size: 40 });
-  text('112 integrated', 1605, 500, { size: 32, color: C.dim, weight: 'normal' });
-  text('emergency response', 1605, 542, { size: 32, color: C.dim, weight: 'normal' });
-  text('🚓  🚒  🚑', 1605, 640, { size: 56 });
-  text('One number', 1605, 730, { size: 32 });
-  text('One control room', 1605, 775, { size: 32 });
-  text('One smart engine', 1605, 820, { size: 32, color: C.accent });
+  text('DELIVERED BY', 1605, 280, { size: 26, color: C.amb });
+  text('Arohak', 1605, 328, { size: 38 });
+  text('× Quanfluence', 1605, 374, { size: 38 });
+  text('FOR', 1605, 438, { size: 26, color: C.amb });
+  text('Government of', 1605, 484, { size: 38 });
+  text('Andhra Pradesh', 1605, 530, { size: 38 });
+  text('112 integrated emergency', 1605, 590, { size: 28, color: C.dim, weight: 'normal' });
+  text('response system', 1605, 626, { size: 28, color: C.dim, weight: 'normal' });
+  text('🚓  🚒  🚑', 1605, 700, { size: 48 });
+  text('One number · One control room', 1605, 775, { size: 28 });
+  text('One smart engine', 1605, 822, { size: 32, color: C.accent });
   ctx.restore();
   const capA = a * ease(prog(t, 46.6, 47.4));
   caption(t < 52.5 ? 'Every incident gets the best combination of responders'
@@ -438,13 +452,13 @@ function sClose(t) {           // 81 - 90
     ctx.beginPath(); ctx.ellipse(960, 380, 420 + i * 80, 110 + i * 40, (t * 0.15) + i * 1.05, 0, 7); ctx.stroke();
   }
   ctx.restore();
-  text('AROHAK TECHNOLOGIES', 960, 370, { size: 92, alpha: a });
-  text('Quantum-inspired today. Quantum-ready tomorrow.', 960, 480, { size: 46, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 82, 83)) });
-  text('Built in India  ·  Proven in Andhra Pradesh', 960, 570, { size: 40, color: C.gold, alpha: a * ease(prog(t, 83, 84)) });
+  lockup(200, a, 76);
+  text('Quantum-inspired today. Quantum-ready tomorrow.', 960, 490, { size: 46, color: C.accent, weight: 'normal', alpha: a * ease(prog(t, 82, 83)) });
+  text('Built in India  ·  Proven in Andhra Pradesh', 960, 575, { size: 40, color: C.gold, alpha: a * ease(prog(t, 83, 84)) });
   const ba = a * ease(prog(t, 84.5, 85.5));
   ctx.save(); ctx.globalAlpha = ba;
   ctx.fillStyle = C.accent; rrect(660, 700, 600, 100, 50); ctx.fill(); ctx.restore();
-  text('Talk to us at our booth', 960, 752, { size: 42, color: C.bg, alpha: ba });
+  text('Visit our joint stall', 960, 752, { size: 42, color: C.bg, alpha: ba });
 }
 
 const DURATION = 90;
