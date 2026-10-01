@@ -1,49 +1,51 @@
 # Video 2: 108 Ambulance Dispatch Pilot (Arohak × Quanfluence)
 
-**Purpose:** show how much faster QUBO-based routing gets a patient from the 108 call to the scene, then to the hospital, compared with the current 108 dispatch.
+**Purpose:** compare live 108 dispatch performance with the QUBO routing forecast from the pilot. The comparison runs from the distress call, to the scene, to the hospital.
 **Length:** about 80 seconds, 1080p, loops at the stall.
 **Silent-first:** every scene has a big headline, a caption bar and on-screen clocks. A voice-over is optional.
 **Video 1** (`expo-video/arohak_quantum_expo.mp4`) stays unchanged.
 
 ---
 
-## The numbers (source: pilot deck, "Existing vs Quantum routing Comparison")
+## The numbers
 
-### Deck figures: travel time only (average minutes per call)
+**Sources**
+- **Current 108:** live 108 data. It reflects real operations, so **no buffers are added**.
+- **QUBO routing:** forecast from the pilot. Real-world buffers are **added to the QUBO side only**:
+  - **+20 min** at the distress location, before leaving for the hospital (stabilising and boarding the patient)
+  - **+15 min** to hand the patient over at the hospital
 
-| Stage | Current 108 | QUBO routing | Saved |
+### Deck figures (average minutes per call)
+
+| | Current 108 (live) | QUBO (forecast, before buffers) |
+|---|---|---|
+| Call → reach scene | 22.6 | 9.8 |
+| Scene → reach hospital | 37.9 | 7.7 |
+| Total | 60.6 | 17.5 |
+
+### Video figures: clock from the 108 call
+
+| Milestone | Current 108 (live) | QUBO routing (forecast + buffers) | Saved |
 |---|---|---|---|
-| Call → reach scene | 22.6 | 9.8 | 12.8 min (−57%) |
-| Scene → reach hospital | 37.9 | 7.7 | 30.2 min (−80%) |
-| **Total** | **60.6** | **17.5** | **43.1 min (−71%)** |
+| ① Ambulance reaches patient | **22.6** | **9.8** | **12.8 min (−57%)** |
+| ② Leaves the scene | (included in live data) | 29.8 (+20) | |
+| ③ Reaches hospital | **60.6** | **37.5** | **23.1 min (−38%)** |
+| ④ Patient handed over | (included in live data) | **52.5** (+15) | |
+| **End to end** | **60.6** | **52.5** | **8.1 min (−13%)** |
 
-### Video figures: with real-world buffers added
-
-The deck figures leave out two fixed steps, which take the **same time in both systems**:
-- **+20 min** at the distress location, before the ambulance leaves for the hospital (patient stabilised and boarded)
-- **+15 min** for the ambulance to hand the patient over at the hospital
-
-| Milestone (cumulative clock from the 108 call) | Current 108 | QUBO routing | Saved |
+| Stage (duration) | Current 108 (live) | QUBO routing | Saved |
 |---|---|---|---|
-| ① Ambulance reaches patient | 22.6 | 9.8 | 12.8 min (−57%) |
-| ② Patient boarded, leaves scene (+20) | 42.6 | 29.8 | 12.8 min |
-| ③ Ambulance reaches hospital | 80.6 | 37.5 | 43.1 min (−53%) |
-| ④ Patient handed over (+15) | **95.6** | **52.5** | **43.1 min (−45%)** |
+| Call → scene | 22.6 | 9.8 | −57% |
+| Scene → hospital (QUBO includes 20 min at scene) | 38.0 | 27.7 | −27% |
+| **Call → patient in hospital care** (QUBO includes 20 + 15 min buffers) | **60.6** | **52.5** | **−13%** |
 
-| Stage (duration) | Current 108 | QUBO routing | Saved |
-|---|---|---|---|
-| Reach scene | 22.6 | 9.8 | −57% |
-| Scene → hospital, including 20 min at scene | 57.9 | 27.7 | −52% |
-| **Call → patient handed over (end-to-end)** | **95.6** | **52.5** | **43.1 min, −45%** |
-
-**Headline numbers for the video:**
-- **52.5 min vs 95.6 min**, call to patient handed over at the hospital
-- **43 minutes saved per emergency**
-- **45% faster end to end**
+**Headline numbers for the video**
+1. **The ambulance reaches the patient 13 minutes sooner: 9.8 vs 22.6 min (57% faster).** This is the lead message, since the first minutes on scene matter most.
+2. **The patient is in hospital care 8 minutes sooner: 52.5 vs 60.6 min,** even after adding 35 minutes of buffer to the QUBO forecast only.
 
 **Notes on the numbers**
-- In the deck, the existing stage times add up to 60.5 but its total says 60.6, a rounding difference. The video follows the deck's total, so the on-screen clocks stay consistent: hospital arrival 60.6 + 20 = **80.6**, and handover 80.6 + 15 = **95.6**.
-- Adding the buffers changes the percentage, not the minutes saved. On travel time alone, QUBO is 71% faster. Once the 20 minutes at the scene and the 15-minute handover are included, it is 45% faster end to end, and the saving stays **43.1 minutes**. The 45% figure is the conservative, real-world one, and it's the one experts will trust.
+- In the deck, the existing stage times add up to 60.5 but its total says 60.6, a rounding difference. The video uses the deck's total of 60.6, so the live leg from the scene to the hospital is 60.6 − 22.6 = 38.0.
+- The end-to-end comparison is **deliberately conservative**: every buffer goes on the QUBO side. That makes it hard to challenge, so say it with confidence: *"even after we add 35 minutes of buffer to our own forecast."*
 
 ---
 
@@ -52,33 +54,26 @@ The deck figures leave out two fixed steps, which take the **same time in both s
 | # | Time | On screen (visual) | Headline / caption (what silent viewers read) | Voice-over (optional) |
 |---|---|---|---|---|
 | 1 | 0:00–0:06 | AROHAK TECHNOLOGIES × QUANFLUENCE lockup; ambulance icon with a pulse line | **108 Ambulance Dispatch: Pilot** · *QUBO routing on Quanfluence's Ising machine* | "Arohak and Quanfluence: our 108 ambulance dispatch pilot." |
-| 2 | 0:06–0:13 | A phone rings; a red distress pin appears on a city map | **From the 108 call to the hospital, every minute matters** | "When someone calls 108, every minute until they reach the hospital matters." |
-| 3 | 0:13–0:17 | Screen splits: left **Current 108** (grey), right **QUBO routing** (cyan); same call, same map; both clocks at 0:00 | **Same emergency. Two systems. Watch the clock.** | "Same emergency. Two systems." |
-| 4 | 0:17–0:27 | **① Reach the patient.** Both ambulances drive to the pin; QUBO arrives first, and its clock freezes with a ✓ | **① Ambulance reaches patient** · Current **22.6 min** · QUBO **9.8 min** · badge **−57%** | "QUBO routing reaches the patient in 9.8 minutes, against 22.6 today." |
-| 5 | 0:27–0:33 | **② Boarding.** Patient icon moves into the ambulance; a "+20 min" chip appears on **both** sides | **② At the scene: 20 min on both sides** · clocks show **42.6** vs **29.8** | "Stabilising and boarding the patient takes the same twenty minutes in both systems." |
-| 6 | 0:33–0:45 | **③ To the hospital.** Both ambulances drive to hospital icons; QUBO arrives far earlier | **③ Ambulance reaches hospital** · clocks show **80.6** vs **37.5** | "QUBO routing reaches the hospital at 37.5 minutes. The current system takes 80.6." |
-| 7 | 0:45–0:51 | **④ Handover.** "+15 min" chip on both sides; final clocks lock | **④ Patient handed over: 15 min on both sides** · final clocks **95.6** vs **52.5** | "After a fifteen-minute handover, the patient is in care at 52.5 minutes, instead of 95.6." |
-| 8 | 0:51–0:59 | Two horizontal timeline bars split into 4 coloured segments (reach, board, drive, handover), drawn to scale; the gap between them is highlighted | **Call → patient in hospital care** · **52.5 min vs 95.6 min** · big badge **43 minutes saved** | "That's 43 minutes saved for every emergency." |
-| 9 | 0:59–1:06 | Scorecard: three rows (reach scene −57% · scene → hospital incl. 20 min at scene −52% · end to end −45%) | **45% faster from call to care** · *Includes 20 min at the scene + 15 min hospital handover in both systems* | "Even after time at the scene and handover, that's 45% faster from call to care." |
-| 10 | 1:06–1:12 | 3-step graphic: live calls + ambulance GPS → **Arohak QUBO model** → **Quanfluence Ising machine** → best ambulance and route | **Why it's faster: Arohak models the routing as one optimisation, and Quanfluence's Ising machine solves it in moments** | "Arohak turns dispatch and routing into one optimisation, and Quanfluence's Ising machine solves it in moments." |
-| 11 | 1:12–1:18 | The ambulance icon expands into ambulance, police and fire icons, then a **112** badge | **Proven on 108. Next: 112, with police, fire and ambulance as one** | "Proven on 108. Next, 112: police, fire and ambulance as one." |
+| 2 | 0:06–0:13 | A phone rings; a red distress pin appears on a city map | **From the 108 call to the hospital, every minute matters** | "When someone calls 108, every minute until they reach care matters." |
+| 3 | 0:13–0:18 | Screen splits. Left **Current 108**, tagged *LIVE DATA* (grey). Right **QUBO routing**, tagged *PILOT FORECAST* (cyan). Same call, same map; both clocks at 0:00 | **Live 108 vs QUBO forecast. Same emergency. Watch the clock.** | "Live 108 data against our QUBO routing forecast. Same emergency." |
+| 4 | 0:18–0:28 | **① Reach the patient.** Both ambulances drive to the pin. QUBO arrives first and its clock freezes with a ✓; the live side keeps driving | **① Ambulance reaches patient** · Live 108 **22.6 min** · QUBO **9.8 min** · badge **13 min sooner (−57%)** | "QUBO routing reaches the patient in 9.8 minutes. Today it takes 22.6. That's 13 minutes sooner at the patient's side." |
+| 5 | 0:28–0:34 | **② At the scene.** QUBO side only: patient boards and a "+20 min" chip appears; the live side shows *"included in live data"* | **② 20 min at the scene, added to the QUBO forecast** · QUBO clock **29.8** | "We add twenty minutes at the scene to our forecast, to stabilise and board the patient." |
+| 6 | 0:34–0:44 | **③ To the hospital.** Both ambulances drive to hospital icons; QUBO arrives first | **③ Reaches hospital** · Live 108 **60.6** · QUBO **37.5** | "QUBO routing reaches the hospital at 37.5 minutes. The live system takes 60.6." |
+| 7 | 0:44–0:50 | **④ Handover.** QUBO side only: "+15 min" chip; the clock locks at 52.5 | **④ 15 min hospital handover, added to the QUBO forecast** · final **52.5 vs 60.6** | "Even after fifteen more minutes for handover, the patient is in care at 52.5 minutes, against 60.6 today." |
+| 8 | 0:50–0:58 | Two timeline bars drawn to scale. Live: one grey bar, 60.6. QUBO: four segments (reach 9.8, scene 20, drive 7.7, handover 15) = 52.5. Gap highlighted | **Call → patient in hospital care** · **52.5 vs 60.6 min** · badge **8 minutes sooner** · small: *with 35 min of buffers added to QUBO only* | "That's 8 minutes sooner into care, even with 35 minutes of buffer added to our side only." |
+| 9 | 0:58–1:06 | Scorecard. Big top row: **13 min sooner at the patient (−57%)**. Below: scene → hospital −27% · call to care −13% | **13 minutes sooner at the patient's side** | "Thirteen minutes sooner at the patient's side, and faster all the way to the hospital." |
+| 10 | 1:06–1:12 | 3-step graphic: live calls + ambulance GPS → **Arohak QUBO model** → **Quanfluence Ising machine** → best ambulance and route | **Why it's faster: Arohak models dispatch and routing as one optimisation, and Quanfluence's Ising machine solves it in moments** | "Arohak turns dispatch and routing into one optimisation, and Quanfluence's Ising machine solves it in moments." |
+| 11 | 1:12–1:18 | The ambulance icon expands into ambulance, police and fire icons, then a **112** badge | **Piloted on 108. Next: 112, with police, fire and ambulance as one** | "Piloted on 108. Next, 112: police, fire and ambulance as one." |
 | 12 | 1:18–1:23 | Closing lockup | **AROHAK × QUANFLUENCE** · *Visit our joint stall* | "Visit our joint stall." |
 
-**Footnote on every results screen (small text):** *Average minutes per call, 108 pilot. Includes 20 min at the distress location and 15 min hospital handover, applied equally to both systems.*
+**Footnote on every results screen (small text):** *Current 108: live data, average minutes per call. QUBO: pilot forecast, plus 20 min at the scene and 15 min hospital handover (added to QUBO only).*
 
 ---
 
 ## Honesty guardrails
 
-- Each results screen says **"pilot"**. The video never calls this statewide or 112-wide.
-- Scene 11 presents 112 as the **next step**, not as something already done.
-- The buffers (20 min at the scene, 15 min handover) are added **equally to both sides**, and the screen says so, so the comparison stays fair.
+- The QUBO side is always tagged **"Pilot forecast"** and the 108 side **"Live data"**. The video never presents the forecast as measured.
+- Scene 11 says **"Piloted on 108"**, not "proven", because the QUBO figures are forecasts. 112 is presented as the **next step**.
+- All buffers go on the QUBO side only, and the screen says so, which keeps the comparison conservative.
 - The video uses *QUBO routing* and *Ising machine*, never "quantum computer".
 - The map and routes are labelled *illustrative*. Only the minutes are real data.
-
----
-
-## Please confirm before I build it
-
-1. **Measured or expected?** Did the deck's figures come from live pilot calls, or are they a simulation or projection on pilot data? If they aren't measured on live calls, the footnote will say *"Pilot simulation on 108 call data"* instead of *"108 pilot"*.
-2. **Pilot scope (optional):** the district, period and number of calls, for one line in scene 2.
