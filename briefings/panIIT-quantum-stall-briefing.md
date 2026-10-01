@@ -46,12 +46,15 @@ Many visitors at a Pan IIT stall will be engineers and PhDs. Some will know more
 - **Neutral atom:** QuEra, Pasqal. Scaling quickly.
 - **Photonic:** PsiQuantum, Xanadu.
 - **Quantum annealing:** D-Wave. Built specifically for optimization (QUBO problems).
+- **Coherent Ising Machines (CIM), photonic:** NTT/Stanford pioneered them; **Quanfluence** (Bengaluru, IIT Madras-incubated) builds them in India. Also built specifically for optimization (Ising/QUBO problems), and they run at **room temperature**. *This is what Arohak used for 112. See Section 4A.*
 
 ---
 
 ## 2. Vocabulary cheat sheet (use naturally, a couple per conversation)
 
 - **QUBO:** *Quadratic Unconstrained Binary Optimization.* The standard way to turn a business optimization problem into something a quantum machine can solve. **Learn this one; it ties both use cases together.**
+- **Ising model / Ising machine:** A physics model of spins (±1) that settle into the lowest-energy arrangement. An Ising machine is hardware that finds that arrangement physically. Mathematically equivalent to QUBO. **Your 112 pilot ran on one.**
+- **Coherent Ising Machine (CIM):** A photonic Ising machine where laser pulses in a fibre loop act as spins.
 - **QAOA:** *Quantum Approximate Optimization Algorithm.* A gate-based algorithm for optimization problems.
 - **VQE:** *Variational Quantum Eigensolver.* Used for chemistry and molecule simulation.
 - **Quantum annealing:** The system "settles" into a low-energy state that represents a good solution.
@@ -116,7 +119,7 @@ Dial 112 is the single emergency number for police, fire and ambulance. At any m
 1. **Data integration layer (your strength):** Real-time feeds from the 112 CAD/call-centre system, vehicle GPS/AVL, maps and traffic, historical incident data, all brought together through an integration/API layer. *"Most of the hard work in quantum projects is actually this layer. Quantum is only as good as the data you feed it."*
 2. **Problem formulation (QUBO, confirmed):** We encoded assignment, routing and coverage as a **QUBO** (Quadratic Unconstrained Binary Optimization): binary variables like "vehicle *i* assigned to incident *j*," with penalties for constraint violations (wrong vehicle type, out of jurisdiction, exceeding response-time SLA) and objectives (minimize response time, maximize zone coverage, prioritize severity).
 3. **Decomposition:** We split the state into zones/clusters classically, so each sub-problem fits the size today's quantum hardware handles well.
-4. **Hybrid solve:** We send sub-problems to a quantum/hybrid solver `[CONFIRM: platform, e.g., D-Wave hybrid / IBM Qiskit QAOA / quantum-inspired GPU solver]`, with a **classical solver running in parallel as baseline and fallback**.
+4. **Solve on the Quanfluence Ising machine:** We converted each zone-level QUBO into Ising form and ran it on **Quanfluence's photonic Coherent Ising Machine**, with a **classical solver running in parallel as baseline and fallback**.
 5. **Validation and comparison:** In the pilot, every QUBO solution was checked classically for feasibility and compared with current dispatch outcomes and a classical baseline. In a scaled rollout, the best solution would go to the dispatcher's screen as a **recommendation** (a human always stays in the loop). `[CONFIRM: whether pilot recommendations were shown to dispatchers or evaluated offline.]`
 
 ### Explaining the QUBO in simple terms (you *will* be asked)
@@ -125,6 +128,8 @@ Dial 112 is the single emergency number for police, fire and ambulance. At any m
 **The formula, if someone technical asks:** minimize **xᵀQx**, where **x** is a vector of 0/1 decisions and **Q** is a matrix. The diagonal holds individual costs (e.g., travel time for vehicle *i* to incident *j*). The off-diagonal holds pairwise interactions (e.g., penalties when two decisions conflict).
 
 **Example constraint as a penalty:** "Each incident gets exactly one vehicle" becomes **P·(Σᵢ xᵢⱼ − 1)²**. This is zero when exactly one vehicle is assigned and positive otherwise. **P** is the penalty weight.
+
+**QUBO → Ising (why the Ising machine can run it):** QUBO uses 0/1 variables (x). The Ising model uses spins of −1/+1 (s). They're mathematically equivalent through **x = (1 + s) / 2**. So our QUBO becomes an Ising problem: *find the spin arrangement with the lowest energy.* That's exactly what an Ising machine is built to do.
 
 **Why QUBO is the right fit:** It's the native input format for quantum annealers (D-Wave) and maps directly onto the Ising model. It's also the standard input for QAOA on gate-based machines and for quantum-inspired solvers. *"QUBO keeps us hardware-agnostic: the same formulation can run on an annealer, a gate-based machine, or a classical/quantum-inspired solver for benchmarking."*
 
@@ -136,6 +141,47 @@ Dial 112 is the single emergency number for police, fire and ambulance. At any m
 
 ### One-liner
 > "In emergency response, every minute matters. The nearest-vehicle rule is greedy. We optimize the whole fleet together, including where the *next* emergency is likely to come from. That's a combinatorial problem that fits quantum optimization very well."
+
+---
+
+## 4A. The hardware: Quanfluence Coherent Ising Machine (CIM)
+
+> Source: public information about Quanfluence (news coverage of its 2024 seed round led by pi Ventures, plus the company's own material). `[CONFIRM]` the exact machine version and spin count Arohak used with Quanfluence, and whether you're allowed to name them as a partner (you probably are, since it's a joint Indian success story, but check).
+
+### Quick facts about Quanfluence
+- **Bengaluru-based** quantum/photonics startup, founded in **2021**.
+- **Incubated at IIT Madras.** Co-founder **Prof. Anil Prabhakar (IIT Madras, Electrical Engineering)** researched the optical Ising machine that became their core product. *This is a great point at a Pan IIT summit: "IIT-born hardware, applied to an AP Government problem."*
+- Other co-founders include Sujoy Chakravarty, Ravi Mehta and Biman Chattopadhyay (long semiconductor/chip-design careers, including at Texas Instruments), plus Aditi Vaidya and Sandeep Goyal.
+- Raised about **$2M seed (Dec 2024), led by pi Ventures.**
+- Their optical Ising machine publicly handled about **128 fully interconnected variables (spins)**, with a much larger next-generation version announced. `[CONFIRM the size of the machine you used.]`
+- **Runs at room temperature,** using **telecom-grade optical components.** No dilution refrigerator, unlike superconducting machines (IBM, Google) that need about −273 °C.
+
+### How a Coherent Ising Machine works (your 30-second explanation)
+> "Instead of qubits on a chip, it uses **pulses of laser light travelling in a fibre loop**. Each pulse represents one variable: a 'spin' that settles into one of two phase states, which we read as +1 or −1 (0 or 1 in our QUBO). The pulses are coupled to each other according to our problem matrix. As the system is pumped, the light pulses collectively settle into the **lowest-energy arrangement**, and that arrangement is the solution to our optimization problem. Physics does the searching, instead of a CPU trying combinations one by one."
+
+**A bit deeper (for photonics/EE alumni):**
+- **Time-multiplexed:** One fibre loop carries many pulses one after another. Each pulse is one spin.
+- **Bistable states:** Each pulse settles into one of two phases (0 or π). In Quanfluence's design, a biased **Mach-Zehnder Modulator** creates the bistability.
+- **Measurement-feedback coupling:** Each pulse's state is measured, and an **FPGA** computes the coupling (from the Ising/QUBO matrix J) and feeds it back into the loop on the next round trip. That's how you get **all-to-all connectivity**, a big advantage over chips where qubits connect only to their neighbours.
+- **Bifurcation:** As gain increases past a threshold, the system "chooses" a low-energy configuration of the whole network at once.
+
+### Why this choice is a strength (use these)
+1. **Purpose-built for optimization.** 112 dispatch is an optimization problem, and an Ising machine is built for exactly that. *"We used the right tool for the problem, not the most famous tool."*
+2. **All-to-all connectivity.** Every variable can interact with every other, so dense dispatch problems map without the heavy embedding overhead that many qubit chips need.
+3. **Room temperature, compact, lower cost.** Realistic for deployment in a government data centre.
+4. **Made in India, IIT-incubated.** Data sovereignty and self-reliance (Atmanirbhar Bharat), well aligned with the National Quantum Mission and AP's Quantum Valley vision. *Strong point for the CM.*
+5. **Fast.** Ising machines find good solutions in milliseconds per run, so you can run many times and keep the best one.
+
+### ⚠️ The honesty point: "Is a CIM a real quantum computer?"
+Someone at an IIT summit **will** ask this. Know the nuance:
+- A CIM is **not a gate-based, universal quantum computer** like IBM's or Google's. It can't run Shor's or Grover's algorithm. It's a **special-purpose physical (analog) optimizer**, like an annealer.
+- Researchers **debate** how much the result depends on quantum effects. Measurement-feedback CIMs are often described as **"quantum-inspired" or "physics-based" photonic Ising machines.** Quanfluence describes its work as quantum and quantum-inspired photonic computing.
+- **Your safe vocabulary:** say **"photonic Coherent Ising Machine"** or **"physics-based quantum-optical optimizer."** Call the variables **spins**, not qubits. Don't call it "a quantum computer with N qubits."
+
+**Your answer:**
+> "Good question. It's not a universal gate-based quantum computer; it's a special-purpose photonic Ising machine, built specifically for optimization problems like ours. Whether CIMs get a true quantum speed-up is an open research question, and we don't claim one. What matters to us is that it takes our QUBO directly, gives high-quality solutions very fast at room temperature, and we benchmark it against classical solvers every time. And because our formulation is QUBO, the same model runs on annealers or gate-based machines (QAOA) as those mature. We aren't locked in."
+
+This answer will earn respect from physicists in the room.
 
 ---
 
@@ -192,7 +238,7 @@ This is where you shine. Use it to steer any conversation back to your strength.
         ▼
 [Data prep & problem formulation → QUBO]
         ▼
-[Hybrid orchestrator] ──► Quantum cloud (IBM Quantum / AWS Braket / Azure Quantum / D-Wave Leap)
+[Hybrid orchestrator] ──► Quantum/Ising solver (Quanfluence CIM, used in 112; also IBM / D-Wave / Braket)
         │           └──► Classical solver (baseline + fallback)
         ▼
 [Best-solution selection + explainability]
@@ -212,7 +258,7 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 - **The CM's track record:** Hyderabad's HITEC City and IT growth in the 1990s. The natural pitch is *"Quantum is to this decade what IT was to the 90s, and Andhra Pradesh is again moving first."*
 
 ### 60-second pitch for the CM
-> "Sir, Arohak is an Andhra Pradesh technology company working on practical quantum applications. We've completed a pilot with the AP Government on **Dial 112**, using quantum optimization (QUBO-based) to dispatch and position emergency vehicles more effectively so citizens get help faster. `[one CONFIRMED result]`.
+> "Sir, Arohak is an Andhra Pradesh technology company working on practical quantum applications. We've completed a pilot with the AP Government on **Dial 112**, using quantum-optical optimization (a QUBO model run on an **Indian-made photonic Ising machine from Quanfluence, incubated at IIT Madras**) to dispatch and position emergency vehicles more effectively so citizens get help faster. `[one CONFIRMED result]`.
 > Our strength is making quantum *usable*: connecting quantum computers to real government and enterprise systems. As Quantum Valley comes up in Amaravati, we want to be the company that turns that hardware into real outcomes for AP citizens: emergency services, agriculture supply chains, power grid balancing, traffic. We'd welcome the opportunity to scale the 112 pilot statewide and to be a delivery partner for Quantum Valley use cases."
 
 **Keep it short.** Mention one result, one ask, one forward-looking line. Have a one-page leave-behind ready.
@@ -231,11 +277,11 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 
 ### A. Technical questions (IIT alumni, engineers, researchers)
 
-**Q1. Did you run on actual quantum hardware or a simulator?**
-`[CONFIRM the truth.]` Template: *"We used [hardware/hybrid service] for the quantum core, with simulators for development and testing. For production-like runs we use a hybrid solver, so the quantum processor handles the hardest combinatorial core and classical handles the rest."*
+**Q1. Did you run on actual hardware or a simulator?**
+*"On actual hardware: a **photonic Coherent Ising Machine from Quanfluence**, a Bengaluru startup incubated at IIT Madras. We converted our QUBO to Ising form, ran zone-level sub-problems on the machine, and validated every result classically."* `[CONFIRM: whether runs were on-premise at Quanfluence or via their cloud/API access.]`
 
 **Q2. How many qubits did you use?**
-`[CONFIRM.]` *"Each decomposed sub-problem used about [N] variables/qubits. We deliberately decompose the state-level problem into zone-level sub-problems that fit current hardware well. Fitting the problem to the hardware is a big part of the engineering."*
+*Gently correct the term; that shows you know the field.* *"An Ising machine uses **spins**, not qubits. Each spin is a light pulse in the fibre loop. Each zone-level sub-problem used about `[CONFIRM N]` spins, within the machine's capacity of `[CONFIRM, e.g., 128]` fully connected spins. We decompose the state-level problem by zone so each piece fits. Fitting the problem to the hardware is a big part of the engineering."*
 
 **Q3. Did you actually achieve quantum advantage?**
 *Be honest. This is a test.* *"Not in the strict academic sense; nobody has proven that for a real-world routing problem yet. What we showed is that the hybrid approach produces solutions [comparable to / better than] our classical baseline within the dispatch time window on our pilot instances. And the architecture is ready to benefit as hardware improves. We're building capability ahead of the curve, not claiming a miracle."*
@@ -243,11 +289,14 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 **Q4. Isn't this just simulated annealing / a classical heuristic with a quantum label?**
 *"Fair challenge. We always benchmark against classical heuristics, including simulated annealing and MILP solvers, and we only route to the quantum path where it earns its place. Part of our stack is quantum-inspired, and we're transparent about which part is which."*
 
-**Q5. Gate-based or annealing? Why?**
-*"For optimization in the near term, annealing and hybrid solvers are more mature at useful problem sizes. We also prototype with QAOA on gate-based systems because that's where long-term advantage lies, especially with error correction coming. Our orchestration layer is solver-agnostic."* (Adjust to what you actually used.)
+**Q5. Why an Ising machine and not IBM/Google gate-based or D-Wave?**
+*"Dispatch is an optimization problem, and Ising machines are built specifically for optimization. Today's gate-based machines are still too noisy to run QAOA at useful sizes. The CIM gives us all-to-all connectivity, room-temperature operation, very fast solves, and it's Indian hardware, which matters for government data and for the ecosystem. Our QUBO formulation is portable, so we can run the same model on D-Wave or on gate-based QAOA for comparison."*
+
+**Q5b. How is a CIM different from a D-Wave annealer?**
+*"Both minimize Ising energy. D-Wave uses superconducting qubits cooled to millikelvin, with limited connectivity, so large problems need 'minor embedding'. A CIM uses optical pulses at room temperature, and measurement-feedback gives all-to-all coupling without embedding. D-Wave is larger and more established; CIMs are newer, cheaper and easier to deploy."*
 
 **Q6. How do you handle noise/errors?**
-*"Three ways: problem decomposition to keep circuits shallow, multiple shots with best-of-sample selection, and always validating the solution classically against constraints before it reaches a dispatcher. Nothing reaches an operator unless it passes classical feasibility checks."*
+*"Ising machines are heuristic and analog, so each run can land in a good but not perfect state. We handle that three ways: many repeated runs (they take milliseconds) keeping the best, careful tuning of penalty weights and pump/feedback parameters, and classical post-processing: a feasibility check plus a quick local search to repair any rule violations. Nothing reaches an operator unless it passes classical feasibility checks."*
 
 **Q7. How do you encode constraints in a QUBO?**
 *"As penalty terms. If a constraint is violated, the energy (cost) goes up. Tuning the penalty weights is one of the trickier parts: too low and you get infeasible answers, too high and the solver ignores the actual objective."* (This answer will impress people who know the field.)
@@ -256,7 +305,7 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 `[CONFIRM.]` *"In the pilot, each QUBO optimization cycle ran in about [X] seconds end-to-end. For a live rollout, the design is that instant decisions use the latest optimized plan plus a fast rule, while the optimizer re-plans continuously in the background every few seconds."*
 
 **Q9. Where is the data hosted? Is government data sent to foreign quantum clouds?**
-*"Very important question. Only anonymized mathematical problem representations (the QUBO matrices, just numbers) go to the solver. No personal or citizen data leaves the government environment. The data integration and formulation run within [state data centre / approved cloud]. And as domestic quantum infrastructure comes up in Amaravati, we can move to it."*
+*"Very important question. Only anonymized mathematical problem representations (the QUBO matrices, just numbers) go to the solver. No personal or citizen data leaves the government environment. The data integration and formulation run within [state data centre / approved cloud]. The solver itself is **Indian hardware from Quanfluence**, so even the numbers stay in India. And as Quantum Valley comes up in Amaravati, we can run on that infrastructure too."* `[CONFIRM data-flow details.]`
 
 **Q10. What about Shor's algorithm and encryption?**
 *"Shor's algorithm could break RSA and ECC on a large, fault-tolerant quantum computer. That's still some years away, but 'harvest now, decrypt later' means sensitive data should move to post-quantum cryptography now. NIST standardized ML-KEM and ML-DSA in 2024. We help organizations take crypto inventory and plan PQC migration, which is fundamentally an integration and architecture exercise."*
@@ -265,7 +314,7 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 `[CONFIRM.]` *"Our quantum team includes [physicists / PhDs / Qiskit-certified engineers / partnerships with X institution]. I lead technology and architecture, making it work end-to-end in production."*
 
 **Q12. Which SDKs/tools?**
-`[CONFIRM.]` Common ones: **Qiskit** (IBM), **Cirq** (Google), **PennyLane** (Xanadu), **D-Wave Ocean**, **Amazon Braket**, **Azure Quantum**, **CUDA-Q** (NVIDIA).
+`[CONFIRM.]` For 112: the **Quanfluence Ising machine and its API/interface**, plus a QUBO formulation layer `[CONFIRM: e.g., Python with PyQUBO / dimod / custom]`, and a classical baseline `[CONFIRM: e.g., OR-Tools / Gurobi / simulated annealing]`. Other common tools worth knowing: **Qiskit** (IBM), **Cirq** (Google), **PennyLane** (Xanadu), **D-Wave Ocean**, **Amazon Braket**, **Azure Quantum**, **CUDA-Q** (NVIDIA).
 
 ### B. Business and strategic questions
 
@@ -279,7 +328,7 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 `[CONFIRM Arohak's commercial model.]` Typical framing: *"A focused pilot is usually [8–12 weeks]: problem discovery, formulation, hybrid solver, benchmark against classical, then a go/no-go on scale-up."*
 
 **Q16. Who are your partners?**
-`[CONFIRM: IBM / AWS / Microsoft / D-Wave / academic partners.]`
+*"For the 112 pilot, our hardware partner was **Quanfluence**, an IIT Madras-incubated photonic quantum startup in Bengaluru. Arohak brings the problem formulation, the integration with government systems, and the end-to-end solution."* `[CONFIRM any other partners.]`
 
 **Q17. How are you different from TCS, Infosys or big quantum startups?**
 *"We're focused and practical: problem-first, not hardware-first. And our integration depth (SAP, webMethods, enterprise and government systems) means our quantum solutions actually go live inside real workflows instead of staying as research demos."*
@@ -311,6 +360,9 @@ Use these to connect Arohak to the state's vision. *Verify the latest status bef
 `[CONFIRM Arohak's headcount and plans.]` Have a number ready.
 
 ### D. Curveballs
+
+**Q21b. What exactly is an "Ising machine"? Why that name?**
+*"It's named after the Ising model, a physics model from the 1920s of tiny magnets (spins) that each point up or down and influence their neighbours. The magnets naturally settle into the arrangement with the lowest energy. We disguise our dispatch problem as a set of magnets: 'up' means this vehicle goes to that incident. Then we let the machine find the lowest-energy arrangement, which is our best plan."*
 
 **Q22. Explain quantum computing to me like I'm a school student.**
 *"A normal computer solves a maze by trying one path at a time. A quantum computer works more like a wave that spreads through all paths together. The wrong paths cancel out and the right path gets stronger. So for certain puzzles, it finds good answers much faster."*
@@ -348,7 +400,10 @@ This is a *senior* response. Juniors bluff; VPs route.
 ## 11. Pre-summit checklist
 
 - [ ] Get **real 112 pilot metrics** from the delivery team and fill all `[CONFIRM]` placeholders
-- [ ] Confirm the **pilot mode** (historical replay / shadow / live in selected zones), the **QUBO size** (number of variables), and the **solver** used
+- [ ] Confirm the **pilot mode** (historical replay / shadow / live in selected zones) and the **QUBO size** (number of spins per sub-problem)
+- [ ] Confirm the **Quanfluence machine version/spin count**, the access mode (on-premise or cloud/API), and permission to name them as a partner
+- [ ] Practise the **"Is a CIM a real quantum computer?"** answer (Section 4A); this is your toughest question
+- [ ] If possible, invite someone from Quanfluence/IIT Madras to stop by the stall, or have a joint slide
 - [ ] Practise the **"explain QUBO simply"** answer (Section 4)
 - [ ] Confirm **exactly which solver/hardware** was used, and the qubit/variable counts
 - [ ] Confirm the **true status** of the second use case and whether the client can be named (Section 6)
@@ -367,8 +422,13 @@ This is a *senior* response. Juniors bluff; VPs route.
 WHAT:  Hybrid quantum-classical optimization, integrated into real systems
 WHY:   NP-hard problems → combinatorial explosion (30 stops = 10^32 routes)
        Classical heuristics slow down / lose quality at real-time scale
-HOW:   Integrate data → formulate QUBO → decompose → hybrid solve
-       (quantum + classical baseline/fallback) → validate → write back
+HOW:   Integrate data → formulate QUBO → decompose by zone → convert to Ising
+       → solve on Quanfluence photonic Coherent Ising Machine (+ classical
+       baseline/fallback) → validate → write back
+HW:    Quanfluence CIM: laser pulses in a fibre loop = spins (not qubits);
+       FPGA feedback = all-to-all coupling; room temperature; IIT Madras-
+       incubated (Prof. Anil Prabhakar), Bengaluru. ~128 spins [CONFIRM]
+       NOT a universal gate-based QC; a special-purpose optimizer. Say so.
 112:   PILOT with AP Govt. Formulated as QUBO (yes/no: vehicle i → incident j)
        Cost = response time + big penalties for broken rules → find min
        Fleet-wide dispatch + pre-positioning, not "nearest vehicle"
@@ -379,9 +439,22 @@ CPG:   SKU sequencing + inventory placement via SAP BTP integration
 EDGE:  "We make quantum usable: the bridge between qubits and business systems"
 HONEST:"No one has proven full quantum advantage on real routing yet;
         we benchmark every time and are ready as hardware scales"
-TERMS: Qubit · Superposition · Entanglement · Interference · QUBO · QAOA
+TERMS: Ising · Spin · CIM · QUBO↔Ising (x=(1+s)/2) · Bifurcation · All-to-all
+       Qubit · Superposition · Entanglement · Interference · QAOA
        VQE · Annealing · NISQ · Logical qubit · PQC (ML-KEM) · Hybrid
 AP:    Amaravati Quantum Valley (IBM System Two, TCS, L&T)
 INDIA: National Quantum Mission ₹6,003 cr, 2023–31, 50–1000 qubits
 DON'T KNOW? → "Let me connect you with our quantum lead."
 ```
+
+---
+
+### Sources (Quanfluence facts)
+- [Inc42: Quanfluence nets $2 Mn led by pi Ventures](https://inc42.com/buzz/quantum-technology-startup-quanfluence-nets-2-mn-led-by-pi-ventures/)
+- [pi Ventures portfolio: Quanfluence](https://www.piventures.in/portfolio/quanfluence)
+- [The Quantum Insider: pi Ventures invests in Quanfluence](https://thequantuminsider.com/2024/12/18/lighting-the-future-pi-ventures-invests-in-the-next-gen-computing-platform-by-quanfluence/)
+- [Quantum Zeitgeist: Quanfluence seed funding for optical Ising machine](https://quantumzeitgeist.com/quanfluence-raises-2-million-in-a-seed-funds-for-optical-ising-machine/)
+- [Quanfluence blog: How Coherent Ising Machines work](https://quanfluence.com/reimagining-computation-how-coherent-ising-machines-are-solving-the-unsolvable/)
+- [VARINDIA: Bengaluru start-up unveils room-temperature quantum computer](https://www.varindia.com/news/bengaluru-start-up-unveils-room-temperature-quantum-computer)
+- [Prof. Anil Prabhakar, IIT Madras](https://sites.google.com/ee.iitm.ac.in/anilprabhakar/home)
+- [Science (2016): A fully programmable 100-spin coherent Ising machine](https://www.science.org/doi/10.1126/science.aah5178)
