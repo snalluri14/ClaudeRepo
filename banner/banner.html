@@ -1,0 +1,160 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  /* Designed on a 1200 x 1400 grid = 6 ft x 7 ft (1 unit = 0.06 in). Printed via scale transform. */
+  :root{
+    --navy:#012367; --navy2:#0A2F7A; --steel:#6A8CAF; --grey:#B9BEC7; --ink:#0B1A33;
+    --cyan:#1FB5D6; --green:#14A86B; --gold:#E3A21A; --paper:#FFFFFF; --mist:#F2F5FA;
+  }
+  @page { size: 72in 84in; margin: 0; }
+  html,body{margin:0;padding:0;background:#fff}
+  body{font-family:"Liberation Sans","DejaVu Sans",Arial,sans-serif;color:var(--ink)}
+  .page{width:1200px;height:1400px;position:relative;overflow:hidden;background:var(--paper);transform-origin:0 0}
+  body.print .page{transform:scale(5.76)}  /* 1200px -> 72in at 96px/in */
+
+  /* layered parallelogram motif from the logo */
+  .motif{position:absolute;right:-60px;top:250px;width:520px;height:330px;opacity:.16}
+  .motif i{position:absolute;left:0;width:420px;height:120px;transform:skewX(-52deg);transform-origin:bottom left}
+  .motif i:nth-child(1){top:0;background:#fff}
+  .motif i:nth-child(2){top:90px;background:#9FB7D3}
+  .motif i:nth-child(3){top:180px;background:#C9D2DE}
+
+  header{height:190px;display:flex;align-items:center;justify-content:center;background:#fff}
+  header img{width:540px;height:auto;display:block}
+
+  .hero{position:relative;height:322px;background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 70%,#123E94 100%);color:#fff;padding:36px 70px 0;box-sizing:border-box;overflow:hidden}
+  .hero .kicker{font-size:22px;letter-spacing:6px;font-weight:700;color:#A9C4E8}
+  .hero h1{white-space:nowrap;margin:12px 0 0;font-size:64px;line-height:1.02;font-weight:800;letter-spacing:-1px}
+  .hero h1 em{font-style:normal;color:#7FD6EE}
+  .hero .sub{margin-top:14px;font-size:26px;color:#DCE6F5}
+  .hero .partner{display:inline-block;margin-top:14px;font-size:21px;color:#fff;border:2px solid rgba(255,255,255,.55);border-radius:30px;padding:9px 22px}
+  .hero .partner b{color:#7FD6EE}
+
+  .results{padding:24px 70px 0;box-sizing:border-box;height:338px;background:var(--mist)}
+  .results .label{display:inline-block;font-size:19px;font-weight:700;letter-spacing:3px;color:var(--navy);border:2px solid var(--navy);border-radius:24px;padding:7px 18px}
+  .cards{display:flex;gap:30px;margin-top:18px}
+  .card{flex:1;min-width:0;background:#fff;border-radius:22px;padding:18px 26px;box-shadow:0 6px 0 rgba(1,35,103,.08);border-top:10px solid var(--green)}
+  .card .big{font-size:74px;font-weight:800;color:var(--green);line-height:1}
+  .card .big small{font-size:34px;font-weight:800}
+  .card .what{font-size:26px;font-weight:700;color:var(--navy);margin-top:4px}
+  .bars{margin-top:16px}
+  .bar{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:17px}
+  .bar span.n{width:118px;flex:0 0 118px;color:#4A5A75;line-height:1.1}
+  .bar div{height:26px;border-radius:6px}
+  .bar b{font-size:19px;white-space:nowrap}
+  .live{background:#9AA6B8}
+  .sim{background:var(--cyan)}
+
+  .how{height:276px;padding:20px 70px 0;box-sizing:border-box;background:#fff}
+  .how h2{margin:0;font-size:34px;color:var(--navy)}
+  .how h2 span{color:var(--steel);font-weight:400;font-size:24px;margin-left:10px}
+  .steps{display:flex;margin-top:16px;align-items:flex-start}
+  .step{flex:1;text-align:center;position:relative;padding:0 6px}
+  .step .dot{width:92px;height:92px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:var(--mist);border:4px solid var(--steel)}
+  .step.key .dot{border-color:var(--cyan);background:#E3F6FB}
+  .step .t{font-size:22px;font-weight:800;color:var(--navy);margin-top:12px;line-height:1.15}
+  .step .d{font-size:16px;color:#4A5A75;margin-top:6px;line-height:1.25}
+  .step:not(:last-child)::after{content:"";position:absolute;top:46px;right:-14px;width:28px;height:4px;background:var(--gold)}
+  .step:not(:last-child)::before{content:"";position:absolute;top:39px;right:-18px;border-left:14px solid var(--gold);border-top:9px solid transparent;border-bottom:9px solid transparent}
+  svg{display:block}
+
+  .bottom{height:174px;display:flex;gap:30px;padding:2px 70px 0;box-sizing:border-box;background:#fff}
+  .rule{flex:0 0 400px;height:156px;padding:16px 26px !important;background:var(--mist);border-radius:20px;padding:22px 26px;box-sizing:border-box;border-left:8px solid var(--steel)}
+  .rule .h{font-size:20px;font-weight:700;letter-spacing:2px;color:var(--steel)}
+  .rule p{margin:8px 0 0;font-size:22px;line-height:1.3;color:var(--navy);font-weight:700}
+  .road{flex:1;padding-top:6px}
+  .road .h{font-size:20px;font-weight:700;letter-spacing:2px;color:var(--steel)}
+  .nodes{display:flex;align-items:center;margin-top:8px}
+  .node{text-align:center;width:150px}
+  .node .c{width:70px;height:70px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:30px;border:4px solid var(--navy);color:var(--navy);background:#fff}
+  .node.done .c{background:var(--green);border-color:var(--green);color:#fff}
+  .node .l{font-size:18px;font-weight:700;color:var(--navy);margin-top:8px;line-height:1.2}
+  .line{flex:1;height:0;border-top:5px dashed var(--steel);margin-top:-46px}
+
+  footer{position:absolute;left:0;right:0;bottom:0;height:100px;background:var(--navy);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:0 70px;box-sizing:border-box}
+  footer .tag{font-size:30px;font-weight:800}
+  footer .tag span{color:#7FD6EE}
+  footer .fn{font-size:13.5px;color:#B8C7DE;margin-top:6px;line-height:1.3}
+</style></head>
+<body>
+<div class="page">
+  <header><img src="arohak_logo.png" alt="arohak — Purpose. People. Innovation"></header>
+
+  <section class="hero">
+        <div class="kicker">QUANTUM-INSPIRED OPTIMISATION · 112 USE CASE</div>
+    <h1>Faster emergency response,<br><em>solved on an Ising machine</em></h1>
+    <div class="sub">Ambulance dispatch modelled as a QUBO and solved with light</div>
+    <div class="partner">In partnership with <b>Quanfluence</b></div>
+  </section>
+
+  <section class="results">
+    <div class="label">PILOT RESULTS · SIMULATION ON REAL 108 CALL DATA</div>
+    <div class="cards">
+      <div class="card">
+        <div class="big">13 <small>min sooner</small></div>
+        <div class="what">to reach the patient</div>
+        <div class="bars">
+          <div class="bar"><span class="n">Current 108 (live)</span><div class="live" style="width:181px"></div><b>22.6 min</b></div>
+          <div class="bar"><span class="n">Ising machine (sim.)</span><div class="sim" style="width:78px"></div><b style="color:var(--green)">9.8 min · −57%</b></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="big">13 <small>min sooner</small></div>
+        <div class="what">into hospital care</div>
+        <div class="bars">
+          <div class="bar"><span class="n">Current 108 (live)</span><div class="live" style="width:194px"></div><b>60.6 min</b></div>
+          <div class="bar"><span class="n">Ising machine (sim.)</span><div class="sim" style="width:152px"></div><b style="color:var(--green)">47.5 min · −22%</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how">
+    <h2>How it works <span>from distress call to dispatch plan</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="dot"><svg width="54" height="54" viewBox="0 0 54 54"><path d="M27 4c-9 0-16 7-16 16 0 12 16 30 16 30s16-18 16-30c0-9-7-16-16-16z" fill="#D9374B"/><circle cx="27" cy="20" r="6" fill="#fff"/></svg></div>
+        <div class="t">Calls &amp; ambulances</div><div class="d">Calls, locations, routes</div>
+      </div>
+      <div class="step key">
+        <div class="dot"><svg width="56" height="56" viewBox="0 0 56 56"><g fill="#012367"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="22" y="6" width="12" height="12" rx="2" opacity=".35"/><rect x="38" y="6" width="12" height="12" rx="2"/><rect x="6" y="22" width="12" height="12" rx="2" opacity=".35"/><rect x="22" y="22" width="12" height="12" rx="2"/><rect x="38" y="22" width="12" height="12" rx="2" opacity=".35"/><rect x="6" y="38" width="12" height="12" rx="2"/><rect x="22" y="38" width="12" height="12" rx="2" opacity=".35"/><rect x="38" y="38" width="12" height="12" rx="2"/></g></svg></div>
+        <div class="t">Arohak QUBO model</div><div class="d">Rules become penalties</div>
+      </div>
+      <div class="step">
+        <div class="dot"><svg width="58" height="58" viewBox="0 0 58 58"><g fill="none" stroke="#6A8CAF" stroke-width="3"><path d="M4 30 L18 8 L30 22 L20 40 Z"/><path d="M30 22 L50 12 L54 34 L36 40 Z"/><path d="M20 40 L36 40 L44 54 L14 54 Z"/></g><path d="M20 40 L36 40 L44 54 L14 54 Z" fill="#1FB5D6" opacity=".5"/></svg></div>
+        <div class="t">Split by zone</div><div class="d">Each piece sized to fit the hardware</div>
+      </div>
+      <div class="step key">
+        <div class="dot"><svg width="62" height="62" viewBox="0 0 62 62"><ellipse cx="31" cy="31" rx="24" ry="24" fill="none" stroke="#012367" stroke-width="3"/><ellipse cx="31" cy="31" rx="17" ry="17" fill="none" stroke="#012367" stroke-width="2" opacity=".5"/><g fill="#1FB5D6"><circle cx="31" cy="7" r="4.5"/><circle cx="55" cy="31" r="4.5"/><circle cx="31" cy="55" r="4.5"/><circle cx="7" cy="31" r="4.5"/><circle cx="48" cy="14" r="3.5"/><circle cx="14" cy="48" r="3.5"/></g></svg></div>
+        <div class="t">Quanfluence Ising machine</div><div class="d">Each spin is a light pulse in a fibre loop</div>
+      </div>
+      <div class="step">
+        <div class="dot"><svg width="54" height="54" viewBox="0 0 54 54"><circle cx="27" cy="27" r="23" fill="#14A86B"/><path d="M15 28 L24 37 L40 19" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="t">Dispatch plan</div><div class="d">Right ambulance, fastest route</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <div class="rule">
+      <div class="h">BUILT TO EXTEND</div>
+      <p>The model can include rules such as matching the patient to the right hospital.</p>
+    </div>
+    <div class="road">
+      <div class="h">ROADMAP</div>
+      <div class="nodes">
+        <div class="node done"><div class="c">✓</div><div class="l">Simulation on<br>108 call data</div></div>
+        <div class="line"></div>
+        <div class="node"><div class="c" style="font-size:20px">108</div><div class="l">Live<br>ambulance trial</div></div>
+        <div class="line"></div>
+        <div class="node"><div class="c">112</div><div class="l">Police · Fire ·<br>Ambulance</div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="tag">Quantum-inspired today. <span>Quantum-ready tomorrow.</span></div>
+    <div class="fn">Current 108: live data, average minutes per call. Ising machine: simulation on the same 108 calls, with 15 min at the scene and 15 min hospital handover added to the simulated side only. Not yet deployed live.</div>
+  </footer>
+</div>
+</body></html>
