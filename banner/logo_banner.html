@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  /* 1200 x 800 design grid = 3 ft wide x 2 ft high. Printed via scale transform. */
+  :root{ --navy:#012367; --steel:#6A8CAF; --grey:#B9BEC7; }
+  @page { size: 36in 24in; margin: 0; }
+  html,body{margin:0;padding:0;background:#fff}
+  body{font-family:"Liberation Sans","DejaVu Sans",Arial,sans-serif}
+  .page{width:1200px;height:800px;position:relative;overflow:hidden;background:#fff;transform-origin:0 0}
+  body.print .page{transform:scale(2.88)}  /* 1200px -> 36in at 96px/in */
+
+  /* layered parallelogram motif echoing the logo mark */
+  .layers{position:absolute;width:420px;height:300px}
+  .layers i{position:absolute;left:0;width:300px;height:70px;transform:skewX(-50deg);transform-origin:bottom left}
+  .layers i:nth-child(1){top:0;background:var(--navy);opacity:.10}
+  .layers i:nth-child(2){top:58px;background:var(--steel);opacity:.13}
+  .layers i:nth-child(3){top:116px;background:var(--grey);opacity:.22}
+  .tl{left:-40px;top:-70px}
+  .br{right:-160px;bottom:60px;transform:rotate(180deg)}
+
+  .logo{position:absolute;left:50%;top:328px;transform:translate(-50%,-50%);width:860px}
+  .logo img{width:100%;display:block}
+
+  .band{position:absolute;left:0;right:0;bottom:0;height:150px;background:var(--navy);display:flex;align-items:center;justify-content:center}
+  .band::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:linear-gradient(90deg,var(--navy),var(--steel),var(--grey))}
+  .band .t{color:#fff;font-size:40px;font-weight:700;letter-spacing:8px}
+  .band .t span{color:#9FC3EA}
+</style></head>
+<body>
+<div class="page">
+  <div class="layers tl"><i></i><i></i><i></i></div>
+  <div class="layers br"><i></i><i></i><i></i></div>
+  <div class="logo"><img src="arohak_logo.png" alt="arohak — Purpose. People. Innovation"></div>
+  <div class="band"><div class="t">QUANTUM-INSPIRED <span>OPTIMISATION</span></div></div>
+</div>
+</body></html>
