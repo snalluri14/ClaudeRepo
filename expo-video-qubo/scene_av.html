@@ -1,0 +1,403 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#081120}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080;
+const ctx = document.getElementById('c').getContext('2d');
+const F = '"Liberation Sans", "DejaVu Sans", "Noto Color Emoji", sans-serif';
+const C = {
+  bg: '#081120', bg2: '#0E1B33', grid: '#15254A', text: '#F2F6FC', dim: '#9AACC8',
+  accent: '#3DD6F5', gold: '#F5B83D', live: '#8A97AD', red: '#FF4B4B', green: '#3DDC84',
+  navy: '#012367', qblue: '#0F2D90',
+};
+
+// ---------- logos ----------
+const LOGO = { arohak: new Image(), qf: new Image() };
+LOGO.arohak.src = 'logos/arohak_logo.png';
+LOGO.qf.src = 'logos/quanfluence_logo.png';
+function logo(img, cx, cy, w, alpha = 1) {
+  if (alpha <= 0 || !img.complete) return;
+  const h = w * img.naturalHeight / img.naturalWidth;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h); ctx.restore();
+}
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+function env(t, a, b, f = 0.5) { return Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b)); }
+function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+function text(str, x, y, { size = 48, color = C.text, weight = 'bold', align = 'center', alpha = 1, maxW = 0, style = '' } = {}) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = color;
+  ctx.font = `${style} ${weight} ${size}px ${F}`;
+  if (maxW) { const w = ctx.measureText(str).width; if (w > maxW) { size = Math.floor(size * maxW / w); ctx.font = `${style} ${weight} ${size}px ${F}`; } }
+  ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(str, x, y); ctx.restore();
+}
+function emoji(ch, x, y, size, alpha = 1) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = '#fff';
+  ctx.font = `${size}px ${F}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ch, x, y); ctx.restore();
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function box(x, y, w, h, r, fill, stroke, lw = 3, dash) {
+  if (fill) { ctx.fillStyle = fill; rrect(x, y, w, h, r); ctx.fill(); }
+  if (stroke) { ctx.save(); if (dash) ctx.setLineDash(dash); ctx.strokeStyle = stroke; ctx.lineWidth = lw; rrect(x, y, w, h, r); ctx.stroke(); ctx.restore(); }
+}
+function caption(str, alpha, sub, subColor = C.dim) {
+  if (alpha <= 0) return;
+  const g = ctx.createLinearGradient(0, 830, 0, 1080);
+  g.addColorStop(0, 'rgba(8,17,32,0)'); g.addColorStop(0.35, 'rgba(8,17,32,0.93)'); g.addColorStop(1, 'rgba(8,17,32,0.98)');
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.fillRect(0, 830, W, 250); ctx.restore();
+  text(str, 960, sub ? 935 : 960, { size: 56, alpha, maxW: 1760 });
+  if (sub) text(sub, 960, 1000, { size: 32, color: subColor, weight: 'normal', alpha, maxW: 1760 });
+}
+function brandTag(alpha) {          // white card so the dark-blue logos stay visible
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha * 0.96; box(40, 30, 470, 76, 16, '#FFFFFF'); ctx.restore();
+  logo(LOGO.arohak, 145, 68, 190, alpha);
+  text('×', 262, 68, { size: 28, color: '#8A97AD', alpha });
+  logo(LOGO.qf, 385, 68, 210, alpha);
+}
+function footnote(str, alpha) { text(str, 960, 1062, { size: 19, color: '#7F90AE', weight: 'normal', alpha, maxW: 1840 }); }
+function atom(x, y, r, t, color = C.accent) {
+  ctx.strokeStyle = color; ctx.lineWidth = 4;
+  for (let q = 0; q < 3; q++) { ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.35, t * 1.5 + q * Math.PI / 3, 0, 7); ctx.stroke(); }
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r * 0.18, 0, 7); ctx.fill();
+}
+
+// ---------- stylised state map ----------
+const STATE = [[420,170],[700,140],[980,190],[1240,170],[1500,240],[1560,380],[1470,520],[1330,640],[1150,760],[930,800],[700,780],[520,690],[420,560],[360,400]];
+function inState(x, y) { let c = false; for (let i = 0, j = STATE.length - 1; i < STATE.length; j = i++) { const [xi, yi] = STATE[i], [xj, yj] = STATE[j]; if (((yi > y) !== (yj > y)) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+function statePath(sx = 1, ox = 0, oy = 0, cx = 960, cy = 470) { ctx.beginPath(); STATE.forEach(([x, y], i) => { const X = cx + (x - cx) * sx + ox, Y = cy + (y - cy) * sx + oy; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.closePath(); }
+function drawState(a, sx = 1, ox = 0, oy = 0) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  statePath(sx, ox, oy); ctx.fillStyle = '#0D1D3D'; ctx.fill();
+  ctx.save(); statePath(sx, ox, oy); ctx.clip();
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 3;
+  for (let i = 0; i < 14; i++) { ctx.beginPath(); ctx.moveTo(300 + i * 100 + ox, 120 + oy); ctx.lineTo(240 + i * 110 + ox, 840 + oy); ctx.stroke(); }
+  for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.moveTo(300 + ox, 180 + i * 90 + oy); ctx.lineTo(1620 + ox, 140 + i * 95 + oy); ctx.stroke(); }
+  ctx.restore();
+  statePath(sx, ox, oy); ctx.strokeStyle = 'rgba(61,214,245,0.45)'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.restore();
+}
+const PINS = []; (() => { let n = 0; while (PINS.length < 16 && n < 4000) { n++; const p = [380 + hash(n * 3.1) * 1180, 170 + hash(n * 7.7) * 620]; if (inState(p[0], p[1]) && PINS.every(q => Math.hypot(q[0] - p[0], q[1] - p[1]) > 120)) PINS.push(p); } })();
+const AMBS = []; (() => { let n = 900; while (AMBS.length < 14 && n < 9000) { n++; const p = [380 + hash(n * 3.1) * 1180, 170 + hash(n * 7.7) * 620]; if (inState(p[0], p[1]) && [...PINS, ...AMBS].every(q => Math.hypot(q[0] - p[0], q[1] - p[1]) > 90)) AMBS.push(p); } })();
+const HOSPS = [[560, 300], [1180, 300], [800, 640], [1380, 520], [1000, 420]];
+const LABELS = [['❤️', 'Cardiac'], ['🚗', 'Road accident'], ['🤰', 'Maternity'], ['🌡️', 'High fever']];
+function pin(x, y, a, t, ok = false, r = 16) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  if (!ok) { const p = (t * 1.1 + hash(x)) % 1; ctx.strokeStyle = C.red; ctx.lineWidth = 3; ctx.globalAlpha = a * (1 - p); ctx.beginPath(); ctx.arc(x, y, r + p * 36, 0, 7); ctx.stroke(); ctx.globalAlpha = a; }
+  ctx.fillStyle = ok ? C.green : C.red; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.restore();
+}
+function ambIcon(x, y, a, col = C.accent, s = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.bg; ctx.strokeStyle = col; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y, 22 * s, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+  emoji('🚑', x, y + 1, 24 * s, a);
+}
+function hospIcon(x, y, a, s = 1) { emoji('🏥', x, y, 40 * s, a); }
+
+// ---------- scenes ----------
+function s0a(t) {                                   // 0-4  Arohak logo on white
+  const a = env(t, 0, 4, 0.6);
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  logo(LOGO.arohak, 960, 500, 980, a * ease(prog(t, 0.2, 1.2)));
+  const sx = lerp(-400, 2300, prog(t, 1.0, 3.2));    // light sweep
+  const g = ctx.createLinearGradient(sx - 200, 0, sx + 200, 0);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = g; ctx.fillRect(0, 300, W, 400); ctx.restore();
+  text('Arohak Technologies Pvt Ltd', 960, 800, { size: 36, color: '#5A6B88', weight: 'normal', alpha: a * ease(prog(t, 1.4, 2.2)) });
+}
+function s0b(t) {                                   // 4-8  partnership
+  const a = env(t, 4, 8, 0.5);
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  const k = ease(prog(t, 4.1, 5.2));
+  logo(LOGO.arohak, lerp(960, 520, k), 470, lerp(980, 620, k), a);
+  const lk = ease(prog(t, 5.0, 6.0));
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#6A8CAF'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(910, 330); ctx.lineTo(910, lerp(330, 610, lk)); ctx.stroke(); ctx.restore();
+  logo(LOGO.qf, 1400, 470, 760, a * ease(prog(t, 5.4, 6.4)));
+  text('in partnership with Quanfluence', 960, 720, { size: 44, color: C.navy, alpha: a * ease(prog(t, 5.8, 6.6)) });
+  text('Quantum-inspired optimisation on an optical Ising machine', 960, 790, { size: 32, color: '#5A6B88', weight: 'normal', alpha: a * ease(prog(t, 6.2, 7)) });
+}
+function s1(t) {                                    // 8-16  calls light up
+  const a = env(t, 8, 16);
+  brandTag(a); drawState(a);
+  PINS.forEach((p, i) => {
+    const pa = a * ease(prog(t, 8.6 + i * 0.32, 9.0 + i * 0.32));
+    pin(p[0], p[1], pa, t);
+    if (i < 4 && pa > 0) {
+      const [e, l] = LABELS[i];
+      ctx.font = `bold 24px ${F}`; const w = ctx.measureText(l).width + 70;
+      ctx.save(); ctx.globalAlpha = pa; box(p[0] - w / 2, p[1] - 70, w, 40, 20, 'rgba(8,17,32,0.9)', C.red, 2); ctx.restore();
+      emoji(e, p[0] - w / 2 + 24, p[1] - 50, 22, pa); text(l, p[0] + 14, p[1] - 50, { size: 24, alpha: pa });
+    }
+  });
+  caption('Every minute, distress calls light up across the state.', a * ease(prog(t, 8.4, 9)));
+}
+function s2(t) {                                    // 16-28  three decisions per call
+  const a = env(t, 16, 28);
+  brandTag(a); drawState(a);
+  PINS.forEach((p, i) => {
+    pin(p[0], p[1], a, t);
+    const r = ease(prog(t, 16.6 + i * 0.05, 18 + i * 0.05)) * 46;
+    ['🚑', '🛣️', '🏥'].forEach((e, k) => { const ang = -Math.PI / 2 + (k - 1) * 0.9 + Math.sin(t + i) * 0.05; emoji(e, p[0] + Math.cos(ang) * r, p[1] + Math.sin(ang) * r, 22, a * (r / 46)); });
+  });
+  caption('For every call: which ambulance? Which route? Which hospital?', a * ease(prog(t, 16.4, 17)));
+}
+function s3(t) {                                    // 28-43  right hospital (illustrative)
+  const a = env(t, 28, 43);
+  brandTag(a);
+  const z = ease(prog(t, 28, 29.5));
+  ctx.save(); ctx.globalAlpha = a * (1 - z); drawState(1); ctx.restore();
+  // zoomed scene
+  const za = a * z;
+  ctx.save(); ctx.globalAlpha = za; box(160, 150, 1600, 640, 28, '#0D1D3D', 'rgba(61,214,245,0.35)', 3);
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 6; for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.moveTo(200 + i * 240, 160); ctx.lineTo(200 + i * 240, 780); ctx.stroke(); }
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(170, 230 + i * 160); ctx.lineTo(1750, 230 + i * 160); ctx.stroke(); }
+  ctx.restore();
+  const P = [520, 470], NEAR = [880, 330], FAR = [1450, 560];
+  pin(P[0], P[1], za, t, false, 22);
+  emoji('❤️', P[0], P[1] - 58, 34, za); text('Cardiac call', P[0], P[1] + 56, { size: 28, alpha: za });
+  const dim = ease(prog(t, 32, 33.5));
+  ctx.save(); ctx.globalAlpha = za * (1 - dim * 0.6); hospIcon(NEAR[0], NEAR[1], 1, 1.5); ctx.restore();
+  text("Children's hospital", NEAR[0], NEAR[1] + 62, { size: 28, color: dim > 0.5 ? '#C98585' : C.text, alpha: za * (1 - dim * 0.4) });
+  text('nearest', NEAR[0], NEAR[1] - 60, { size: 22, color: C.dim, weight: 'normal', alpha: za });
+  if (dim > 0.3) text('✕', NEAR[0] + 50, NEAR[1] - 40, { size: 40, color: C.red, alpha: za * dim });
+  const g = ease(prog(t, 33, 34.5));
+  ctx.save(); ctx.globalAlpha = za * g; ctx.shadowColor = C.green; ctx.shadowBlur = 40; hospIcon(FAR[0], FAR[1], 1, 1.6); ctx.restore();
+  ctx.save(); ctx.globalAlpha = za * (1 - g); hospIcon(FAR[0], FAR[1], 1, 1.6); ctx.restore();
+  emoji('❤️', FAR[0] + 52, FAR[1] - 42, 30, za * g);
+  text('Cardiac centre', FAR[0], FAR[1] + 66, { size: 30, color: g > 0.5 ? C.green : C.text, alpha: za });
+  const pk = ease(prog(t, 34.5, 37.5));
+  if (pk > 0) {
+    const pts = [P, [700, 470], [700, 650], [1150, 650], [1150, 560], FAR];
+    let L = 0; const seg = []; for (let i = 1; i < pts.length; i++) { const s = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push(s); L += s; }
+    let d = pk * L; ctx.save(); ctx.globalAlpha = za; ctx.strokeStyle = C.accent; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...P);
+    for (let i = 1; i < pts.length; i++) { if (d >= seg[i - 1]) { ctx.lineTo(...pts[i]); d -= seg[i - 1]; } else { const k = d / seg[i - 1]; ctx.lineTo(lerp(pts[i - 1][0], pts[i][0], k), lerp(pts[i - 1][1], pts[i][1], k)); break; } }
+    ctx.stroke(); ctx.restore();
+  }
+  text('Illustrative', 1730, 770, { size: 22, color: C.dim, weight: 'normal', align: 'right', alpha: za });
+  caption('The nearest hospital is not always the right hospital.', a * ease(prog(t, 28.6, 29.2)),
+          'The model can include rules such as matching the patient to the right hospital');
+}
+function s4(t) {                                    // 43-63  complexity
+  const a = env(t, 43, 63);
+  brandTag(a); drawState(a);
+  const extra = Math.floor(prog(t, 46, 60) * 10);
+  const pins = PINS.slice(0, 6 + extra);
+  const bucket = Math.floor(t * 7);
+  ctx.save(); ctx.globalAlpha = a * 0.55 * prog(t, 44, 45); ctx.lineWidth = 2; ctx.setLineDash([7, 7]);
+  for (let n = 0; n < 30 + extra * 6; n++) {
+    const p = pins[Math.floor(hash(bucket * 31 + n) * pins.length)], q = AMBS[Math.floor(hash(bucket * 17 + n * 3) * AMBS.length)], h = HOSPS[Math.floor(hash(bucket * 7 + n) * HOSPS.length)];
+    ctx.strokeStyle = n % 3 === 0 ? C.gold : (n % 3 === 1 ? C.accent : C.live);
+    ctx.beginPath(); ctx.moveTo(...q); ctx.lineTo(...p); ctx.lineTo(...h); ctx.stroke();
+  }
+  ctx.restore();
+  HOSPS.forEach(h => hospIcon(h[0], h[1], a * prog(t, 43.5, 44.5)));
+  AMBS.forEach((q, i) => ambIcon(q[0], q[1], a * ease(prog(t, 43.6 + i * 0.05, 44.2 + i * 0.05)), C.live, 0.9));
+  pins.forEach((p, i) => pin(p[0], p[1], a * (i < 6 ? 1 : ease(prog(t, 46 + (i - 6) * 1.4, 46.5 + (i - 6) * 1.4))), t));
+  caption('Every new call changes the whole plan.', a * ease(prog(t, 43.4, 44)), 'Many calls × many ambulances × many hospitals');
+}
+function s5(t) {                                    // 63-78  yes/no switches
+  const a = env(t, 63, 78);
+  brandTag(a);
+  const cols = 8, rows = 6, x0 = 560, y0 = 230, dx = 120, dy = 88;
+  for (let c = 0; c < cols; c++) text('Call ' + (c + 1), x0 + c * dx, y0 - 50, { size: 22, color: C.dim, alpha: a * prog(t, 63.5, 64.5) });
+  for (let r = 0; r < rows; r++) text('Ambulance ' + 'ABCDEF'[r], x0 - 80, y0 + r * dy, { size: 24, color: C.dim, align: 'right', alpha: a * prog(t, 63.5, 64.5) });
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const ap = a * ease(prog(t, 63.6 + (r * cols + c) * 0.03, 64.2 + (r * cols + c) * 0.03));
+    const on = hash(r * 13 + c * 7 + Math.floor(t * 1.4)) > 0.72 || (r === 0 && c === 0) || (r === 1 && c === 1);
+    ctx.save(); ctx.globalAlpha = ap; box(x0 + c * dx - 36, y0 + r * dy - 20, 72, 40, 20, on ? C.accent : '#1B2B4C');
+    ctx.fillStyle = on ? '#fff' : '#5A6B88'; ctx.beginPath(); ctx.arc(x0 + c * dx + (on ? 16 : -16), y0 + r * dy, 14, 0, 7); ctx.fill(); ctx.restore();
+  }
+  const hl = ease(prog(t, 67, 68));
+  ctx.save(); ctx.globalAlpha = a * hl; ctx.strokeStyle = C.gold; ctx.lineWidth = 4;
+  rrect(x0 - 46, y0 - 30, 92, 60, 26); ctx.stroke(); rrect(x0 + dx - 46, y0 + dy - 30, 92, 60, 26); ctx.stroke(); ctx.restore();
+  text('Does ambulance A take call 1? → YES   ·   Does ambulance B take call 2? → YES', 960, y0 + 6 * dy + 10, { size: 30, color: C.gold, alpha: a * hl });
+  caption('① Every decision becomes a yes/no switch', a * ease(prog(t, 63.4, 64)), 'Does ambulance A take call 1? Does ambulance B take call 2?');
+}
+function s6(t) {                                    // 78-93  QUBO
+  const a = env(t, 78, 93);
+  brandTag(a);
+  const x0 = 230, y0 = 260, dx = 62, dy = 62;
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 7; c++) {
+    const on = hash(r * 13 + c * 7 + Math.floor(t * 1.2)) > 0.7;
+    ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = on ? C.accent : '#1B2B4C'; rrect(x0 + c * dx, y0 + r * dy, 46, 46, 10); ctx.fill(); ctx.restore();
+  }
+  // streams into meter
+  for (let n = 0; n < 10; n++) {
+    const k = ((t * 0.6 + n / 10) % 1);
+    const sx = x0 + 430, sy = y0 + 40 + n * 30, ex = 1500, ey = 500;
+    ctx.save(); ctx.globalAlpha = a * 0.8 * Math.sin(k * Math.PI); ctx.fillStyle = n % 3 ? C.accent : C.gold;
+    ctx.beginPath(); ctx.arc(lerp(sx, ex, k), lerp(sy, ey, k) - Math.sin(k * Math.PI) * 60, 6, 0, 7); ctx.fill(); ctx.restore();
+  }
+  const e = 1 - ease(prog(t, 82, 90));
+  ctx.save(); ctx.globalAlpha = a; box(1480, 230, 120, 560, 20, '#0E1B33', '#2A3A5C', 2);
+  const fh = 540 * (0.12 + 0.88 * e); ctx.fillStyle = e > 0.4 ? C.gold : C.green; rrect(1490, 780 - fh, 100, fh, 14); ctx.fill(); ctx.restore();
+  text('COST', 1540, 205, { size: 26, color: C.dim, alpha: a });
+  text(e > 0.05 ? 'lowering…' : 'lowest = best', 1540, 820, { size: 26, color: e > 0.05 ? C.gold : C.green, alpha: a });
+  const tiles = [['⏱', 'Travel time adds cost', false], ['1️⃣', 'One ambulance per call', false], ['🚑', 'Each ambulance used once', false], ['🏥', 'Right-hospital match · can be added', true]];
+  tiles.forEach(([ic, l, dashed], i) => {
+    const tp = a * ease(prog(t, 79 + i * 1.3, 79.8 + i * 1.3)) * (dashed ? 0.8 : 1);
+    const y = 250 + i * 120;
+    ctx.save(); ctx.globalAlpha = tp; box(780, y, 600, 90, 18, dashed ? 'rgba(14,27,51,0.6)' : '#0E1B33', dashed ? C.dim : C.accent, 3, dashed ? [12, 10] : null); ctx.restore();
+    emoji(ic, 830, y + 46, 38, tp); text(l, 880, y + 46, { size: 28, align: 'left', alpha: tp, color: dashed ? C.dim : C.text, maxW: 480 });
+  });
+  caption('② QUBO: one cost score. Lower = better.', a * ease(prog(t, 78.4, 79)), 'Rules become penalties. The model can include rules such as matching the patient to the right hospital');
+}
+function s7(t) {                                    // 93-108 split by zone
+  const a = env(t, 93, 108);
+  brandTag(a);
+  const ZX = [360, 700, 1020, 1300, 1600];
+  const lift = ease(prog(t, 96, 99.5)), slide = ease(prog(t, 100, 104));
+  // machine slots
+  ctx.save(); ctx.globalAlpha = a * prog(t, 99, 100);
+  box(330, 660, 1260, 150, 24, '#0E1B33', C.accent, 3);
+  for (let i = 0; i < 4; i++) box(370 + i * 305, 685, 260, 100, 14, '#081120', '#2A3A5C', 2);
+  ctx.restore();
+  text('ISING MACHINE', 960, 640, { size: 24, color: C.accent, alpha: a * prog(t, 99, 100) });
+  for (let i = 0; i < 4; i++) {
+    const cx = (ZX[i] + ZX[i + 1]) / 2;
+    const tx = 500 + i * 305, ty = 735;
+    const zx = lerp(0, (i - 1.5) * 40, lift), zy = lerp(0, -40, lift);
+    if (slide < 1) {
+      ctx.save(); ctx.globalAlpha = a * (1 - slide);
+      ctx.beginPath(); ctx.rect(ZX[i] + zx, 100, ZX[i + 1] - ZX[i], 760); ctx.clip();
+      ctx.translate(zx, zy); drawState(1); ctx.restore();
+      ctx.save(); ctx.globalAlpha = a * (1 - slide) * prog(t, 94, 95.5); ctx.strokeStyle = C.gold; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+      if (i > 0) { ctx.beginPath(); ctx.moveTo(ZX[i] + zx, 130); ctx.lineTo(ZX[i] + zx, 820); ctx.stroke(); }
+      ctx.restore();
+    }
+    if (slide > 0) {
+      const bx = lerp(cx, tx, slide), by = lerp(420, ty, slide), s = lerp(1.6, 1, slide);
+      ctx.save(); ctx.globalAlpha = a * Math.min(1, slide * 2);
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) { ctx.fillStyle = (r + c) % 3 ? C.accent : C.gold; ctx.beginPath(); ctx.arc(bx + (c - 2.5) * 22 * s, by + (r - 1.5) * 20 * s, 5 * s, 0, 7); ctx.fill(); }
+      ctx.restore();
+      if (slide >= 1) text('✓ fits', tx, 805 - 120, { size: 0.1, alpha: 0 });
+      text('✓', tx + 110, ty - 38, { size: 30, color: C.green, alpha: a * prog(t, 104, 104.6) });
+    }
+  }
+  caption('③ Split by zone so each piece fits the machine', a * ease(prog(t, 93.4, 94)), 'Fitting the problem to the hardware is a big part of the engineering');
+}
+function s8(t) {                                    // 108-123 optical Ising machine
+  const a = env(t, 108, 123);
+  brandTag(a);
+  const cx = 820, cy = 450;
+  ctx.save(); ctx.globalAlpha = a;
+  for (let k = 0; k < 4; k++) { ctx.strokeStyle = `rgba(61,214,245,${0.25 + k * 0.12})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(cx, cy, 420 - k * 26, 250 - k * 16, 0, 0, 7); ctx.stroke(); }
+  ctx.restore();
+  const settle = prog(t, 112, 119.5);
+  const N = 18;
+  for (let i = 0; i < N; i++) {
+    const ang = (i / N) * Math.PI * 2 + t * 0.7;
+    const x = cx + Math.cos(ang) * 395, y = cy + Math.sin(ang) * 236;
+    const locked = settle > hash(i * 3.3) * 0.9;
+    const s = locked ? 1 : (hash(i * 7 + Math.floor(t * 8)) > 0.5 ? 1 : -1);
+    ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = C.accent; ctx.shadowBlur = 25;
+    ctx.fillStyle = locked ? C.accent : '#FFFFFF'; ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = locked ? C.accent : C.gold; ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x, y + 30 * s); ctx.lineTo(x, y + 52 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + 60 * s); ctx.lineTo(x - 8, y + 48 * s); ctx.lineTo(x + 8, y + 48 * s); ctx.fill(); ctx.restore();
+  }
+  // energy meter
+  const e = 1 - ease(settle);
+  ctx.save(); ctx.globalAlpha = a; box(1420, 220, 110, 480, 18, '#0E1B33', '#2A3A5C', 2);
+  const fh = 460 * (0.1 + 0.9 * e); ctx.fillStyle = e > 0.3 ? C.gold : C.green; rrect(1430, 690 - fh, 90, fh, 12); ctx.fill(); ctx.restore();
+  text('ENERGY', 1475, 195, { size: 24, color: C.dim, alpha: a });
+  text(settle < 1 ? 'settling…' : 'lowest = best plan', 1475, 735, { size: 24, color: settle < 1 ? C.gold : C.green, alpha: a });
+  // Quanfluence card
+  ctx.save(); ctx.globalAlpha = a; box(1600, 380, 260, 120, 18, '#FFFFFF'); ctx.restore();
+  logo(LOGO.qf, 1730, 440, 220, a);
+  caption('④ Each spin is a pulse of light in a fibre loop', a * ease(prog(t, 108.4, 109)), "On Quanfluence's Ising machine, the pulses settle into the lowest-energy state: the best plan");
+}
+function s9(t) {                                    // 123-128 decode
+  const a = env(t, 123, 128);
+  brandTag(a); drawState(a);
+  const k = ease(prog(t, 123.3, 126));
+  const used = new Set(); const pairs = PINS.slice(0, 8).map((p, i) => { let b = -1, bd = 1e9; AMBS.forEach((q, j) => { if (used.has(j)) return; const d = Math.hypot(p[0] - q[0], p[1] - q[1]); if (d < bd) { bd = d; b = j; } }); used.add(b); return [AMBS[b], p]; });
+  pairs.forEach(([q, p], i) => {
+    const kk = clamp(k * 1.6 - i * 0.08);
+    ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = C.accent; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(...q); ctx.lineTo(lerp(q[0], p[0], kk), lerp(q[1], p[1], kk)); ctx.stroke(); ctx.restore();
+    ambIcon(q[0], q[1], a); pin(p[0], p[1], a, t, kk >= 1);
+  });
+  caption('⑤ Spins → dispatch plan', a * ease(prog(t, 123.3, 123.8)), 'Right ambulance · fastest route');
+}
+function s10(t) {                                   // 128-143 result
+  const a = env(t, 128, 143);
+  brandTag(a);
+  [[60, 'Current 108', 'LIVE DATA', C.live, true], [980, 'Ising-machine routing', 'SIMULATED · same 108 calls', C.accent, false]].forEach(([x0, name, tag, col, live]) => {
+    ctx.save(); ctx.globalAlpha = a; box(x0, 140, 880, 660, 24, '#0D1D3D', live ? '#2A3A5C' : C.accent, live ? 2 : 3); ctx.restore();
+    text(name, x0 + 40, 190, { size: 38, align: 'left', alpha: a });
+    ctx.font = `bold 22px ${F}`; const tw = ctx.measureText(tag).width + 28;
+    ctx.save(); ctx.globalAlpha = a; box(x0 + 40, 220, tw, 36, 18, live ? 'rgba(138,151,173,0.25)' : 'rgba(61,214,245,0.18)'); ctx.restore();
+    text(tag, x0 + 54, 239, { size: 22, color: live ? C.text : C.accent, align: 'left', alpha: a });
+    const B = [x0 + 120, 660], P = [x0 + 420, 400], Hh = [x0 + 760, 640];
+    const route = live ? [B, [x0 + 120, 330], [x0 + 300, 330], [x0 + 300, 520], [x0 + 420, 520], P, [x0 + 600, 400], [x0 + 600, 740], [x0 + 760, 740], Hh] : [B, [x0 + 260, 520], P, [x0 + 600, 520], Hh];
+    let L = 0; const seg = []; for (let i = 1; i < route.length; i++) { const s = Math.hypot(route[i][0] - route[i - 1][0], route[i][1] - route[i - 1][1]); seg.push(s); L += s; }
+    const k = ease(prog(t, 129, live ? 137 : 134));
+    ctx.save(); ctx.globalAlpha = a * 0.25; ctx.strokeStyle = '#9AACC8'; ctx.lineWidth = 6; ctx.setLineDash([10, 10]); ctx.beginPath(); route.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke(); ctx.restore();
+    let d = k * L, pos = B; ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = col; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(...B);
+    for (let i = 1; i < route.length; i++) { if (d >= seg[i - 1]) { ctx.lineTo(...route[i]); d -= seg[i - 1]; pos = route[i]; } else { const kk = d / seg[i - 1]; pos = [lerp(route[i - 1][0], route[i][0], kk), lerp(route[i - 1][1], route[i][1], kk)]; ctx.lineTo(...pos); break; } }
+    ctx.stroke(); ctx.restore();
+    pin(P[0], P[1], a, t, k > 0.45);
+    const done = k >= 1;
+    ctx.save(); ctx.globalAlpha = a; if (done) { ctx.shadowColor = C.green; ctx.shadowBlur = 40; } hospIcon(Hh[0], Hh[1], 1, 1.3); ctx.restore();
+    ambIcon(pos[0], pos[1], a, col);
+    if (done) text('✓ arrived', Hh[0], Hh[1] + 60, { size: 26, color: C.green, alpha: a });
+  });
+  const b = a * ease(prog(t, 137.5, 138.5));
+  ctx.save(); ctx.globalAlpha = b; ctx.shadowColor = C.green; ctx.shadowBlur = 30; box(560, 380, 800, 200, 100, C.green); ctx.restore();
+  text('16.9% faster', 960, 455, { size: 84, color: C.bg, alpha: b });
+  text('turnaround time', 960, 528, { size: 40, color: C.bg, alpha: b });
+  caption('Tested on real 108 call data', a * ease(prog(t, 128.4, 129)), 'Current 108 (live data) vs Ising-machine routing (simulated on the same calls)');
+  footnote('Current 108: live data. Ising-machine routing: simulation on the same 108 call data. Not yet deployed live.', a);
+}
+function s12(t) {                                   // 143-151 roadmap
+  const a = env(t, 143, 151);
+  brandTag(a);
+  const xs = [420, 960, 1500], y = 430, lk = ease(prog(t, 143.5, 146));
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#22324F'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(xs[2], y); ctx.stroke();
+  ctx.strokeStyle = C.accent; ctx.setLineDash([16, 12]); ctx.beginPath(); ctx.moveTo(xs[0], y); ctx.lineTo(lerp(xs[0], xs[2], lk), y); ctx.stroke(); ctx.restore();
+  [['Simulation', 'on real 108 call data', 0], ['Live 108', 'ambulance trial', 1], ['112', 'police · fire · ambulance', 2]].forEach(([l1, l2, i]) => {
+    const np = a * ease(prog(t, 143.4 + i * 0.8, 144.1 + i * 0.8)), done = i === 0;
+    ctx.save(); ctx.globalAlpha = np; ctx.fillStyle = done ? C.green : C.bg2; ctx.strokeStyle = done ? C.green : C.accent; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(xs[i], y, 80, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+    if (done) text('✓', xs[i], y + 4, { size: 84, color: C.bg, alpha: np });
+    else if (i === 1) emoji('🚑', xs[i], y + 2, 70, np);
+    else { emoji('🚓', xs[i] - 40, y - 18, 34, np); emoji('🚒', xs[i] + 40, y - 18, 34, np); emoji('🚑', xs[i], y + 30, 34, np); }
+    text(done ? 'DONE' : 'NEXT', xs[i], y - 125, { size: 28, color: done ? C.green : C.gold, alpha: np });
+    text(l1, xs[i], y + 140, { size: 42, alpha: np }); text(l2, xs[i], y + 190, { size: 30, color: C.dim, weight: 'normal', alpha: np });
+  });
+  caption('Ambulance today. All of 112 next.', a * ease(prog(t, 143.4, 144)));
+}
+function s13(t) {                                   // 151-158 close on white
+  const a = env(t, 151, 158, 0.7);
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  for (let i = 0; i < 30; i++) { ctx.save(); ctx.globalAlpha = a * 0.25; ctx.fillStyle = i % 2 ? '#9FB7D3' : '#C9D2DE'; ctx.beginPath(); ctx.arc((hash(i) * W + t * 20 * (i % 3 + 1)) % W, hash(i + 50) * H, 3 + hash(i + 9) * 5, 0, 7); ctx.fill(); ctx.restore(); }
+  logo(LOGO.arohak, 520, 450, 640, a * ease(prog(t, 151.2, 152)));
+  text('×', 940, 450, { size: 70, color: '#8A97AD', alpha: a * ease(prog(t, 151.6, 152.4)) });
+  logo(LOGO.qf, 1390, 450, 760, a * ease(prog(t, 151.8, 152.6)));
+  text('Quantum-inspired today. Quantum-ready tomorrow.', 960, 720, { size: 50, color: C.navy, alpha: a * ease(prog(t, 152.6, 153.4)) });
+}
+
+const DURATION = 158;
+window.DURATION = DURATION;
+window.render = function (t) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(960, 480, 80, 960, 480, 1100);
+  g.addColorStop(0, 'rgba(25,50,105,0.32)'); g.addColorStop(1, 'rgba(8,17,32,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (t < 4) s0a(t); else if (t < 8) s0b(t); else if (t < 16) s1(t); else if (t < 28) s2(t);
+  else if (t < 43) s3(t); else if (t < 63) s4(t); else if (t < 78) s5(t); else if (t < 93) s6(t);
+  else if (t < 108) s7(t); else if (t < 123) s8(t); else if (t < 128) s9(t); else if (t < 143) s10(t);
+  else if (t < 151) s12(t); else s13(t);
+};
+Promise.all([document.fonts.ready, ...Object.values(LOGO).map(i => i.decode())]).then(() => { window.READY = true; });
+</script>
+</body></html>
