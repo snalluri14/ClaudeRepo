@@ -36,7 +36,7 @@
 |---|---|---|---|---|
 | 5 | 1:03–1:18 | **Step 1: Model.** Each choice becomes a switch (0/1) in a grid: rows are ambulances, columns are calls, plus hospital choices for each call | **① Every decision becomes a yes/no switch** · *Ambulance A → Call 1? Patient → Cardiac centre?* | "Step one: Arohak turns every choice into a simple yes-or-no switch. Does ambulance A take call 1? Does this patient go to the cardiac centre?" |
 | 6 | 1:18–1:33 | **Step 2: QUBO.** The switches feed one "cost" meter. Rule cards snap on: ⏱ travel time · 1️⃣ one ambulance per call · 🚑 each ambulance used once · 🏥 **specialty match** (cardiac → cardiac centre) · 🛏 bed available | **② QUBO: one cost score. Lower = better.** *Rules become penalties: a wrong hospital costs heavily* | "Step two: we write it as a QUBO, one score where lower is better. Travel time adds cost. Breaking a rule, like sending a heart patient to a children's hospital, adds a heavy penalty." |
-| 7 | 1:33–1:48 | **Step 3: Fit to hardware.** The state map splits into **zones**; each zone becomes a small block of spins. Each block shows a counter: **[CONFIRM N] spins ≤ [CONFIRM 128] capacity** | **③ Split by zone so each piece fits the machine** · *Each zone ≈ [CONFIRM N] spins · capacity [CONFIRM 128] fully connected spins* | "Step three: fitting the problem to the hardware. We split the state into zones so each piece fits the machine: about [N] spins per zone, within its [128] fully connected spins. This is a big part of the engineering." |
+| 7 | 1:33–1:48 | **Step 3: Fit to hardware.** The state map splits into **zones**; each zone becomes a compact block of spins that slides neatly into the machine's frame, with a green ✓ "fits" on each block | **③ Split by zone so each piece fits the machine** · *Fitting the problem to the hardware is a big part of the engineering* | "Step three: fitting the problem to the hardware. We split the state into zones, so each piece fits the machine. Fitting the problem to the hardware is a big part of the engineering." |
 | 8 | 1:48–2:03 | **Step 4: Solve on light.** A glowing **fibre loop**. Pulses of light circulate; each pulse is labelled ↑ or ↓. They flicker, interact, then settle. An energy meter drops to its lowest point | **④ Quanfluence Ising machine: each spin is a pulse of light in a fibre loop** · *The pulses settle into the lowest-energy state = the best plan* | "Step four: Quanfluence's Ising machine. Each spin is a pulse of light travelling in a fibre loop. The pulses interact and settle into their lowest-energy state, and that state is the best plan." |
 | 9 | 2:03–2:08 | **Step 5: Decode.** Spins turn back into lines on the map: ambulance → patient → cardiac centre ✓. Zone results stitch together | **⑤ Spins → dispatch plan** · *Right ambulance · fastest route · right hospital* | "Step five: the spins become the dispatch plan: the right ambulance, the fastest route and the right hospital." |
 
@@ -76,11 +76,8 @@
 
 ## Must confirm before building
 
-1. **[CONFIRM N]:** average spins per zone sub-problem.
-2. **[CONFIRM 128]:** the machine's fully connected spin capacity.
-3. **Specialty and bed matching:** was hospital choice (cardiac → cardiac centre, bed availability) actually part of the QUBO in the simulation? If it was only ambulance and route, I'll change scenes 3, 6 and 9 to say "next step" instead of presenting it as done.
-4. **Number of zones** (optional): for example "AP split into [X] zones". It adds credibility in scene 7.
-5. **Quanfluence approval** of the scene 8 description: "each spin is a pulse of light in a fibre loop."
+1. **Specialty and bed matching:** was hospital choice (cardiac → cardiac centre, bed availability) actually part of the QUBO in the simulation? If it was only ambulance and route, I'll change scenes 3, 6 and 9 to say "next step" instead of presenting it as done.
+2. **Quanfluence approval** of the scene 8 description: "each spin is a pulse of light in a fibre loop."
 
 ## Technical backup for Q&A (not shown on screen)
 
@@ -88,5 +85,5 @@
 - **Objective:** minimise travel time (ambulance → patient → hospital), weighted by severity.
 - **Constraints as penalties:** each call gets exactly one ambulance; each ambulance takes at most one call; each patient goes to exactly one hospital; the hospital must match the patient's condition and have a free bed.
 - **QUBO → Ising:** substitute x = (1 + s) / 2, so each binary variable becomes a spin s = ±1.
-- **Decomposition:** each zone is solved as its own sub-problem so it fits the machine. **[CONFIRM]** how ambulances near zone borders are handled.
+- **Decomposition:** the state-level problem is split by zone, and each zone is solved as its own sub-problem so it fits the machine's spin capacity. If asked for exact spin counts or machine capacity, refer the question to Quanfluence. **[CONFIRM]** how ambulances near zone borders are handled.
 - **Plan check:** **[CONFIRM]** whether each decoded plan is checked against the rules before use. Only say this if it's true.
