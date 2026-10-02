@@ -110,27 +110,27 @@
       <div class="row">
         <div class="num">01</div>
         <div class="ic"><svg width="54" height="54" viewBox="0 0 54 54"><path d="M27 4c-9 0-16 7-16 16 0 12 16 30 16 30s16-18 16-30c0-9-7-16-16-16z" fill="#D9374B"/><circle cx="27" cy="20" r="6" fill="#fff"/></svg></div>
-        <div class="txt"><div class="t">Capture the situation <span class="who">Data</span></div><div class="d">Distress calls, ambulance locations and road travel times are gathered for every call.</div></div>
+        <div class="txt"><div class="t">Capture the situation</div><div class="d">Distress calls, ambulance locations and road travel times are gathered for every call.</div></div>
       </div>
       <div class="row key">
         <div class="num">02</div>
         <div class="ic"><svg width="56" height="56" viewBox="0 0 56 56"><g fill="#012367"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="22" y="6" width="12" height="12" rx="2" opacity=".35"/><rect x="38" y="6" width="12" height="12" rx="2"/><rect x="6" y="22" width="12" height="12" rx="2" opacity=".35"/><rect x="22" y="22" width="12" height="12" rx="2"/><rect x="38" y="22" width="12" height="12" rx="2" opacity=".35"/><rect x="6" y="38" width="12" height="12" rx="2"/><rect x="22" y="38" width="12" height="12" rx="2" opacity=".35"/><rect x="38" y="38" width="12" height="12" rx="2"/></g></svg></div>
-        <div class="txt"><div class="t">Model it as a QUBO <span class="who">Arohak</span></div><div class="d">Every choice becomes a yes/no switch: <i>does ambulance A take call 1?</i> Travel time adds cost, and broken rules (one ambulance per call, each ambulance used once) add heavy penalties.</div></div>
+        <div class="txt"><div class="t">Model it as a QUBO</div><div class="d">Every choice becomes a yes/no switch: <i>does ambulance A take call 1?</i> Travel time adds cost, and broken rules (one ambulance per call, each ambulance used once) add heavy penalties.</div></div>
       </div>
       <div class="row key">
         <div class="num">03</div>
         <div class="ic"><svg width="58" height="58" viewBox="0 0 58 58"><g fill="none" stroke="#6A8CAF" stroke-width="3"><path d="M4 30 L18 8 L30 22 L20 40 Z"/><path d="M30 22 L50 12 L54 34 L36 40 Z"/><path d="M20 40 L36 40 L44 54 L14 54 Z"/></g><path d="M20 40 L36 40 L44 54 L14 54 Z" fill="#1FB5D6" opacity=".5"/></svg></div>
-        <div class="txt"><div class="t">Fit it to the hardware <span class="who">Arohak</span></div><div class="d">The state-level problem is split by zone so each piece fits the Ising machine. Fitting the problem to the hardware is a big part of the engineering.</div></div>
+        <div class="txt"><div class="t">Fit it to the hardware</div><div class="d">The state-level problem is split by zone so each piece fits the Ising machine. Fitting the problem to the hardware is a big part of the engineering.</div></div>
       </div>
       <div class="row key">
         <div class="num">04</div>
         <div class="ic"><svg width="62" height="62" viewBox="0 0 62 62"><ellipse cx="31" cy="31" rx="24" ry="24" fill="none" stroke="#012367" stroke-width="3"/><ellipse cx="31" cy="31" rx="17" ry="17" fill="none" stroke="#012367" stroke-width="2" opacity=".5"/><g fill="#1FB5D6"><circle cx="31" cy="7" r="4.5"/><circle cx="55" cy="31" r="4.5"/><circle cx="31" cy="55" r="4.5"/><circle cx="7" cy="31" r="4.5"/><circle cx="48" cy="14" r="3.5"/><circle cx="14" cy="48" r="3.5"/></g></svg></div>
-        <div class="txt"><div class="t">Solve with light <span class="who">Quanfluence</span></div><div class="d">On Quanfluence's Ising machine, each spin is a pulse of light in a fibre loop. The pulses interact and settle into the lowest-energy state: the best plan.</div></div>
+        <div class="txt"><div class="t">Solve with light</div><div class="d">On Quanfluence's Ising machine, each spin is a pulse of light in a fibre loop. The pulses interact and settle into the lowest-energy state: the best plan.</div></div>
       </div>
       <div class="row">
         <div class="num">05</div>
         <div class="ic"><svg width="54" height="54" viewBox="0 0 54 54"><circle cx="27" cy="27" r="23" fill="#14A86B"/><path d="M15 28 L24 37 L40 19" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="txt"><div class="t">Decode & dispatch <span class="who">Result</span></div><div class="d">The spins are turned back into a dispatch plan: the right ambulance and the fastest route for every call in the zone.</div></div>
+        <div class="txt"><div class="t">Decode & dispatch</div><div class="d">The spins are turned back into a dispatch plan: the right ambulance and the fastest route for every call in the zone.</div></div>
       </div>
     </div>
   </section>
