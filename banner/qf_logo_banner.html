@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  /* 1200 x 800 design grid = 3 ft wide x 2 ft high. Printed via scale transform. */
+  :root{ --qblue:#0F2D90; --qlight:#9FB4F0; }
+  @page { size: 36in 24in; margin: 0; }
+  html,body{margin:0;padding:0;background:#fff}
+  body{font-family:"Liberation Sans","DejaVu Sans",Arial,sans-serif}
+  .page{width:1200px;height:800px;position:relative;overflow:hidden;background:#fff;transform-origin:0 0}
+  body.print .page{transform:scale(2.88)}
+
+  /* oversized bracket motif echoing the ⟨Q⟩ mark */
+  .br{position:absolute;top:-40px;height:720px;width:300px;opacity:.06}
+  .br.l{left:-120px} .br.r{right:-120px}
+
+  .logo{position:absolute;left:50%;top:328px;transform:translate(-50%,-50%);width:900px}
+  .logo img{width:100%;display:block}
+
+  .band{position:absolute;left:0;right:0;bottom:0;height:150px;background:var(--qblue);display:flex;align-items:center;justify-content:center}
+  .band::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:linear-gradient(90deg,var(--qblue),#4F6FD8,var(--qlight))}
+  .band .t{color:#fff;font-size:40px;font-weight:700;letter-spacing:8px}
+  .band .t span{color:var(--qlight)}
+</style></head>
+<body>
+<div class="page">
+  <svg class="br l" viewBox="0 0 300 720"><polyline points="260,20 40,360 260,700" fill="none" stroke="#0F2D90" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <svg class="br r" viewBox="0 0 300 720"><polyline points="40,20 260,360 40,700" fill="none" stroke="#0F2D90" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="logo"><img src="quanfluence_logo.svg" alt="Quanfluence"></div>
+  <div class="band"><div class="t">QUANTUM-INSPIRED <span>OPTIMISATION</span></div></div>
+</div>
+</body></html>
