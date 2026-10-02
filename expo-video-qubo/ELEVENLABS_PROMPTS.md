@@ -36,16 +36,16 @@ Two fourteen AM. A distress call... a sixty-two-year-old man with chest pain.
 Three decisions, made in seconds. Which ambulance. Which route. And which hospital.
 
 **3 (0:28):**
-And the nearest hospital isn't always the right one. A heart patient needs a cardiac centre with a free bed... not a children's hospital.
+And the nearest hospital isn't always the right one. A heart patient needs cardiac care... not a children's hospital. And our model can include rules like that.
 
 **4 (0:43):**
 Now multiply that by every call, every ambulance and every hospital in the state. The number of possible plans explodes... and the best one changes every minute.
 
 **5 (1:03):**
-Step one. Arohak turns every choice into a simple yes-or-no switch. Does ambulance A take call one? Does this patient go to the cardiac centre?
+Step one. Arohak turns every choice into a simple yes-or-no switch. Does ambulance A take call one? Does ambulance B take call two?
 
 **6 (1:18):**
-Step two. We write it as a QUBO: one score, where lower is better. Travel time adds cost. Breaking a rule, like sending a heart patient to a children's hospital, adds a heavy penalty.
+Step two. We write it as a QUBO: one score, where lower is better. Travel time adds cost, and breaking a rule adds a heavy penalty. The model can include rules such as matching the patient to the right hospital.
 
 **7 (1:33):**
 Step three. Fitting the problem to the hardware. We split the state into zones, so each piece fits the machine. This is a big part of the engineering.
@@ -54,7 +54,7 @@ Step three. Fitting the problem to the hardware. We split the state into zones, 
 Step four. Quanfluence's Ising machine. Each spin is a pulse of light travelling in a fibre loop. The pulses interact, and settle into their lowest-energy state... and that state is the best plan.
 
 **9 (2:03):**
-Step five. The spins become the dispatch plan.
+Step five. The spins become the dispatch plan: the right ambulance, and the fastest route.
 
 **10 (2:08):**
 Tested on real 108 call data: today, help reaches the patient in twenty-two point six minutes on average. With our routing... nine point eight. That's thirteen minutes sooner.
@@ -105,7 +105,7 @@ Arohak and Quanfluence. Quantum-inspired today. Quantum-ready tomorrow.
 > An abstract grid of small glowing toggle switches floating in dark space, rows and columns, each flipping between off (dim) and on (bright cyan) one by one. Clean, mathematical and elegant.
 
 **6 · QUBO cost score (15 s)**
-> The glowing switch grid feeds streams of light into a single vertical energy meter. Small glowing rule tiles (a clock, an ambulance, a hospital with a heart, a bed) snap onto the grid. Some connections flash gold when penalised. The meter level drops.
+> The glowing switch grid feeds streams of light into a single vertical energy meter. Small glowing rule tiles (a clock, an ambulance, a 'one' symbol) snap onto the grid, then a fourth faint, dashed tile with a hospital symbol fades in softly. Some connections flash gold when penalised. The meter level drops.
 
 **7 · Fit to hardware (15 s)**
 > A dark stylised state map splits into several zones along glowing borders. Each zone lifts up, compresses into a neat cube of light points, and slides smoothly into a sleek glowing slot, like puzzle pieces fitting perfectly.
@@ -114,7 +114,7 @@ Arohak and Quanfluence. Quantum-inspired today. Quantum-ready tomorrow.
 > Close-up of a glowing coiled optical fibre loop in darkness. Bright pulses of light travel around the loop. The pulses flicker and interact, then gradually synchronise into a calm, stable rhythmic pattern. Scientific, beautiful and precise. Laser-lab aesthetic.
 
 **9 · Decode to plan (5 s)**
-> Points of light fly out of the fibre loop and land on a dark map, forming clean cyan routes from ambulance icons to a patient pin and on to a hospital with a heart symbol. Everything turns calm and green.
+> Points of light fly out of the fibre loop and land on a dark map, forming clean cyan routes from ambulance icons to a patient pin and on to a hospital. Everything turns calm and green.
 
 **10 · Race (15 s)**
 > Split screen, two identical dark maps. On the left, a grey ambulance takes a long winding route. On the right, a cyan ambulance takes a direct route and arrives much earlier; its destination pin turns green. Leave clear space at the top of each half for clock overlays.
@@ -139,13 +139,13 @@ Arohak and Quanfluence. Quantum-inspired today. Quantum-ready tomorrow.
 | All scenes 1–12 | Small co-brand tag, top-left: Arohak logo × Quanfluence logo |
 | 1 | **2:14 AM. A distress call.** · *Chest pain. 62-year-old man.* |
 | 2 | **Which ambulance? Which route? Which hospital?** |
-| 3 | **The nearest hospital is not always the right hospital.** |
+| 3 | **The nearest hospital is not always the right hospital.** · *The model can include rules such as matching the patient to the right hospital* · small tag *illustrative* |
 | 4 | **Many calls × many ambulances × many hospitals** |
 | 5 | **① Every decision becomes a yes/no switch** |
-| 6 | **② QUBO: one cost score. Lower = better.** · *A wrong hospital costs heavily* |
+| 6 | **② QUBO: one cost score. Lower = better.** · Rule cards: *travel time · one ambulance per call · each ambulance used once* · dashed card: *right-hospital match (can be added)* |
 | 7 | **③ Split by zone so each piece fits the machine** |
 | 8 | **④ Quanfluence Ising machine: each spin is a pulse of light in a fibre loop** |
-| 9 | **⑤ Spins → dispatch plan** · *Right ambulance · fastest route · right hospital* |
+| 9 | **⑤ Spins → dispatch plan** · *Right ambulance · fastest route* |
 | 10 | Left: **Current 108 · LIVE DATA · 22.6 min** · Right: **Ising-machine routing · SIMULATED · 9.8 min** · badge **13 min sooner (−57%)** |
 | 11 | **Call → hospital care: 60.6 vs 47.5 min** · badge **13 min sooner (−22%)** · *with 30 min of buffer added to our side only* |
 | 12 | ✓ **Simulation on 108 data** → **Live 108 trial** → **112** · **Ambulance today. All of 112 next.** |
@@ -155,5 +155,5 @@ Arohak and Quanfluence. Quantum-inspired today. Quantum-ready tomorrow.
 **Final checks before 3 October**
 - Numbers must match exactly: 22.6 / 9.8 / 60.6 / 47.5 / −57% / −22%.
 - Results screens must keep the labels "LIVE DATA" and "SIMULATED", and the footnote.
-- Confirm hospital-specialty matching was part of the simulation. If it wasn't, change scenes 3, 6 and 9 to say *"the model can include…"*.
+- Hospital matching is shown as a capability (*"the model can include…"*), because the pilot doesn't yet check specialty or beds. Keep that wording.
 - Get Quanfluence's approval for its logo and for the scene 8 wording.

@@ -22,7 +22,7 @@
 |---|---|---|---|---|
 | 1 | 0:08–0:16 | Black screen. Phone rings. **2:14 AM**. Red pin pulses on a dark map of Andhra Pradesh | **2:14 AM. A distress call.** *Chest pain. 62-year-old man.* | "2:14 AM. A distress call: a 62-year-old man with chest pain." |
 | 2 | 0:16–0:28 | Three questions pop up around the pin, each with an icon: 🚑 · 🛣️ · 🏥 | **Which ambulance? Which route? Which hospital?** | "Three decisions, made in seconds: which ambulance, which route, and which hospital." |
-| 3 | 0:28–0:43 | The map shows two hospitals: the nearest one is a **children's hospital ✗** and a farther one is a **cardiac centre with a free ICU bed ✓** | **The nearest hospital is not always the right hospital.** *A heart patient needs cardiac care, not a children's hospital.* | "And the nearest hospital isn't always the right one. A heart patient needs a cardiac centre with a free bed, not a children's hospital." |
+| 3 | 0:28–0:43 | The map shows two hospitals: the nearest one is a **children's hospital** (dims) and a farther one is a **cardiac centre** (glows). Small tag: *illustrative* | **The nearest hospital is not always the right hospital.** *The model can include rules such as matching the patient to the right hospital.* | "And the nearest hospital isn't always the right one. A heart patient needs cardiac care, not a children's hospital, and our model can include rules like that." |
 
 ## Act 2: Why it's hard (0:43–1:03)
 
@@ -34,11 +34,11 @@
 
 | # | Time | Visual | On-screen text | Voice-over |
 |---|---|---|---|---|
-| 5 | 1:03–1:18 | **Step 1: Model.** Each choice becomes a switch (0/1) in a grid: rows are ambulances, columns are calls, plus hospital choices for each call | **① Every decision becomes a yes/no switch** · *Ambulance A → Call 1? Patient → Cardiac centre?* | "Step one: Arohak turns every choice into a simple yes-or-no switch. Does ambulance A take call 1? Does this patient go to the cardiac centre?" |
-| 6 | 1:18–1:33 | **Step 2: QUBO.** The switches feed one "cost" meter. Rule cards snap on: ⏱ travel time · 1️⃣ one ambulance per call · 🚑 each ambulance used once · 🏥 **specialty match** (cardiac → cardiac centre) · 🛏 bed available | **② QUBO: one cost score. Lower = better.** *Rules become penalties: a wrong hospital costs heavily* | "Step two: we write it as a QUBO, one score where lower is better. Travel time adds cost. Breaking a rule, like sending a heart patient to a children's hospital, adds a heavy penalty." |
+| 5 | 1:03–1:18 | **Step 1: Model.** Each choice becomes a switch (0/1) in a grid: rows are ambulances, columns are calls | **① Every decision becomes a yes/no switch** · *Ambulance A → Call 1? Ambulance B → Call 2?* | "Step one: Arohak turns every choice into a simple yes-or-no switch. Does ambulance A take call 1? Does ambulance B take call 2?" |
+| 6 | 1:18–1:33 | **Step 2: QUBO.** The switches feed one "cost" meter. Rule cards snap on: ⏱ travel time · 1️⃣ one ambulance per call · 🚑 each ambulance used once. A fourth, dashed card fades in: 🏥 **right-hospital match**, labelled *can be added* | **② QUBO: one cost score. Lower = better.** *Rules become penalties. The model can include rules such as matching the patient to the right hospital* | "Step two: we write it as a QUBO, one score where lower is better. Travel time adds cost, and breaking a rule adds a heavy penalty. The model can include rules such as matching the patient to the right hospital." |
 | 7 | 1:33–1:48 | **Step 3: Fit to hardware.** The state map splits into **zones**; each zone becomes a compact block of spins that slides neatly into the machine's frame, with a green ✓ "fits" on each block | **③ Split by zone so each piece fits the machine** · *Fitting the problem to the hardware is a big part of the engineering* | "Step three: fitting the problem to the hardware. We split the state into zones, so each piece fits the machine. Fitting the problem to the hardware is a big part of the engineering." |
 | 8 | 1:48–2:03 | **Step 4: Solve on light.** A glowing **fibre loop**. Pulses of light circulate; each pulse is labelled ↑ or ↓. They flicker, interact, then settle. An energy meter drops to its lowest point | **④ Quanfluence Ising machine: each spin is a pulse of light in a fibre loop** · *The pulses settle into the lowest-energy state = the best plan* | "Step four: Quanfluence's Ising machine. Each spin is a pulse of light travelling in a fibre loop. The pulses interact and settle into their lowest-energy state, and that state is the best plan." |
-| 9 | 2:03–2:08 | **Step 5: Decode.** Spins turn back into lines on the map: ambulance → patient → cardiac centre ✓. Zone results stitch together | **⑤ Spins → dispatch plan** · *Right ambulance · fastest route · right hospital* | "Step five: the spins become the dispatch plan: the right ambulance, the fastest route and the right hospital." |
+| 9 | 2:03–2:08 | **Step 5: Decode.** Spins turn back into lines on the map: ambulance → patient → hospital ✓. Zone results stitch together | **⑤ Spins → dispatch plan** · *Right ambulance · fastest route* | "Step five: the spins become the dispatch plan: the right ambulance and the fastest route." |
 
 ## Act 4: The result (2:08–2:38)
 
@@ -76,14 +76,14 @@
 
 ## Must confirm before building
 
-1. **Specialty and bed matching:** was hospital choice (cardiac → cardiac centre, bed availability) actually part of the QUBO in the simulation? If it was only ambulance and route, I'll change scenes 3, 6 and 9 to say "next step" instead of presenting it as done.
+1. **Hospital matching (resolved):** the pilot doesn't yet include hospital-specialty or bed checks, so scenes 3 and 6 present them as rules *the model can include*, not as something the pilot did.
 2. **Quanfluence approval** of the scene 8 description: "each spin is a pulse of light in a fibre loop."
 
 ## Technical backup for Q&A (not shown on screen)
 
-- **Variables:** x(a,c) = 1 if ambulance *a* takes call *c*; y(c,h) = 1 if call *c* goes to hospital *h*.
+- **Variables (pilot):** x(a,c) = 1 if ambulance *a* takes call *c*. **Extension (not in the pilot yet):** y(c,h) = 1 if call *c* goes to hospital *h*.
 - **Objective:** minimise travel time (ambulance → patient → hospital), weighted by severity.
-- **Constraints as penalties:** each call gets exactly one ambulance; each ambulance takes at most one call; each patient goes to exactly one hospital; the hospital must match the patient's condition and have a free bed.
+- **Constraints as penalties (pilot):** each call gets exactly one ambulance; each ambulance takes at most one call. **Can be added:** each patient goes to exactly one hospital that matches their condition and has a free bed.
 - **QUBO → Ising:** substitute x = (1 + s) / 2, so each binary variable becomes a spin s = ±1.
 - **Decomposition:** the state-level problem is split by zone, and each zone is solved as its own sub-problem so it fits the machine's spin capacity. If asked for exact spin counts or machine capacity, refer the question to Quanfluence. **[CONFIRM]** how ambulances near zone borders are handled.
 - **Plan check:** **[CONFIRM]** whether each decoded plan is checked against the rules before use. Only say this if it's true.
