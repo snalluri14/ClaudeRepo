@@ -20,15 +20,15 @@
 
 | # | Time | Visual | On-screen text | Voice-over |
 |---|---|---|---|---|
-| 1 | 0:08–0:16 | Black screen. Phone rings. **2:14 AM**. Red pin pulses on a dark map of Andhra Pradesh | **2:14 AM. A distress call.** *Chest pain. 62-year-old man.* | "2:14 AM. A distress call: a 62-year-old man with chest pain." |
-| 2 | 0:16–0:28 | Three questions pop up around the pin, each with an icon: 🚑 · 🛣️ · 🏥 | **Which ambulance? Which route? Which hospital?** | "Three decisions, made in seconds: which ambulance, which route, and which hospital." |
-| 3 | 0:28–0:43 | The map shows two hospitals: the nearest one is a **children's hospital** (dims) and a farther one is a **cardiac centre** (glows). Small tag: *illustrative* | **The nearest hospital is not always the right hospital.** *The model can include rules such as matching the patient to the right hospital.* | "And the nearest hospital isn't always the right one. A heart patient needs cardiac care, not a children's hospital, and our model can include rules like that." |
+| 1 | 0:08–0:16 | Dark map of Andhra Pradesh at night. Red distress pins pop up one after another across different districts, each with a small icon: ❤ cardiac · 🚗 road accident · 🤰 maternity · 🌡 high fever | **Every minute, distress calls light up across the state.** | "Every minute, distress calls light up across the state. A cardiac emergency. A road accident. A woman in labour. A child with a high fever." |
+| 2 | 0:16–0:28 | Three icons ripple out from every pin at once: 🚑 · 🛣️ · 🏥 | **For every call: which ambulance? Which route? Which hospital?** | "For every call, three decisions, made in seconds: which ambulance, which route, and which hospital." |
+| 3 | 0:28–0:43 | Zoom into the cardiac call. Two hospitals nearby: the nearest is a **children's hospital** (dims); a farther one is a **cardiac centre** (glows). Small tag: *illustrative* | **The nearest hospital is not always the right hospital.** *The model can include rules such as matching the patient to the right hospital.* | "Take the cardiac call. The nearest hospital isn't always the right one. A heart patient needs cardiac care, not a children's hospital, and our model can include rules like that." |
 
 ## Act 2: Why it's hard (0:43–1:03)
 
 | # | Time | Visual | On-screen text | Voice-over |
 |---|---|---|---|---|
-| 4 | 0:43–1:03 | Zoom out: dozens of calls, ambulances and hospitals across the state; tangled lines flicker | **Many calls × many ambulances × many hospitals** · *Every combination is a possible plan* | "Now multiply that by every call, every ambulance and every hospital in the state. The number of possible plans explodes, and the best one changes every minute." |
+| 4 | 0:43–1:03 | Zoom back out to the whole state. Ambulances and hospitals appear; tangled lines connect every pin to many ambulances; new pins keep popping up and the lines re-tangle | **Every new call changes the whole plan.** · *Many calls × many ambulances × many hospitals* | "And every new call changes the whole picture. Multiply every call by every ambulance and every hospital, and the number of possible plans explodes." |
 
 ## Act 3: How Arohak solves it (1:03–2:08)
 

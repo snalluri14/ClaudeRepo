@@ -30,16 +30,16 @@ Arohak Technologies.
 In partnership with Quanfluence.
 
 **1 (0:08):**
-Two fourteen AM. A distress call... a sixty-two-year-old man with chest pain.
+Every minute, distress calls light up across the state. A cardiac emergency. A road accident. A woman in labour. A child with a high fever.
 
 **2 (0:16):**
-Three decisions, made in seconds. Which ambulance. Which route. And which hospital.
+For every call, three decisions, made in seconds. Which ambulance. Which route. And which hospital.
 
 **3 (0:28):**
-And the nearest hospital isn't always the right one. A heart patient needs cardiac care... not a children's hospital. And our model can include rules like that.
+Take the cardiac call. The nearest hospital isn't always the right one. A heart patient needs cardiac care... not a children's hospital. And our model can include rules like that.
 
 **4 (0:43):**
-Now multiply that by every call, every ambulance and every hospital in the state. The number of possible plans explodes... and the best one changes every minute.
+And every new call changes the whole picture. Multiply every call by every ambulance, and every hospital... and the number of possible plans explodes.
 
 **5 (1:03):**
 Step one. Arohak turns every choice into a simple yes-or-no switch. Does ambulance A take call one? Does ambulance B take call two?
@@ -89,17 +89,17 @@ Arohak and Quanfluence. Quantum-inspired today. Quantum-ready tomorrow.
 **0b · Partnership (4 s)**
 > Two soft glowing points of light on the left and right of a dark screen, joined by a thin cyan line that draws across the middle. Calm, premium and symmetrical, with empty space on both sides for logo overlays.
 
-**1 · Distress call (8 s)**
-> Night. An overhead view of a dark stylised map of a South Indian state with faint glowing roads. A single red location pin pulses softly. A smartphone screen lights up nearby, vibrating. Tense, quiet mood.
+**1 · Calls across the state (8 s)**
+> Night. An overhead view of a dark stylised map of a South Indian state with faint glowing roads. Red location pins pop up one after another across different regions, each pulsing softly, until a dozen pins glow across the map. Tense, urgent mood.
 
 **2 · Three decisions (12 s)**
-> Overhead dark map. Around a pulsing red pin, three glowing icons appear one after another: an ambulance, a winding road and a hospital building. Slow push-in.
+> Overhead dark map covered in pulsing red pins. From every pin at once, three small glowing icons ripple outward: an ambulance, a winding road and a hospital building. Slow push-in.
 
 **3 · Right hospital (15 s)**
-> Overhead dark map with two hospital buildings. The closer hospital glows soft red and dims. A farther hospital, marked by a heart symbol, glows green. A cyan path draws from the red pin past the near hospital to the farther green one.
+> Camera zooms into one red pin on the dark map. Two hospital buildings nearby. The closer hospital glows soft red and dims. A farther hospital, marked by a heart symbol, glows green. A cyan path draws from the red pin past the near hospital to the farther green one.
 
 **4 · Complexity (20 s)**
-> Slow zoom out over a dark stylised state map. Dozens of red pins, ambulance icons and hospital icons appear, connected by many tangled, flickering lines of light, growing chaotic and dense. Feeling of overwhelming complexity.
+> Slow zoom out over a dark stylised state map. Dozens of red pins, ambulance icons and hospital icons appear, connected by many tangled, flickering lines of light. New red pins keep popping up and the lines re-tangle each time, growing chaotic and dense. Feeling of overwhelming complexity.
 
 **5 · Yes/no switches (15 s)**
 > An abstract grid of small glowing toggle switches floating in dark space, rows and columns, each flipping between off (dim) and on (bright cyan) one by one. Clean, mathematical and elegant.
@@ -137,10 +137,10 @@ Arohak and Quanfluence. Quantum-inspired today. Quantum-ready tomorrow.
 | 0a | **Arohak Technologies logo (real file)**, centred · *Arohak Technologies Pvt Ltd* |
 | 0b | Arohak logo (left) · **Quanfluence logo (right)** · **in partnership with Quanfluence** · *Quantum-inspired optimisation on an optical Ising machine* |
 | All scenes 1–12 | Small co-brand tag, top-left: Arohak logo × Quanfluence logo |
-| 1 | **2:14 AM. A distress call.** · *Chest pain. 62-year-old man.* |
-| 2 | **Which ambulance? Which route? Which hospital?** |
+| 1 | **Every minute, distress calls light up across the state.** · small pin labels: *Cardiac · Road accident · Maternity · High fever* |
+| 2 | **For every call: which ambulance? Which route? Which hospital?** |
 | 3 | **The nearest hospital is not always the right hospital.** · *The model can include rules such as matching the patient to the right hospital* · small tag *illustrative* |
-| 4 | **Many calls × many ambulances × many hospitals** |
+| 4 | **Every new call changes the whole plan.** · *Many calls × many ambulances × many hospitals* |
 | 5 | **① Every decision becomes a yes/no switch** |
 | 6 | **② QUBO: one cost score. Lower = better.** · Rule cards: *travel time · one ambulance per call · each ambulance used once* · dashed card: *right-hospital match (can be added)* |
 | 7 | **③ Split by zone so each piece fits the machine** |
