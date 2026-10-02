@@ -1,4 +1,4 @@
-# ElevenLabs video script: Arohak × Quanfluence, 112 use case (about 2 min 50 s)
+# ElevenLabs video script: Arohak × Quanfluence, 112 use case (about 2 min 35 s)
 
 Copy one scene card at a time into ElevenLabs.
 - **Clip prompt** goes into video generation. Start every prompt with the style line below.
@@ -70,15 +70,10 @@ Both logos are **dark blue on a transparent background**. On the dark video scen
 - **Voice:** "Step five. The spins become the dispatch plan: the right ambulance, and the fastest route."
 - **Overlay:** **⑤ Spins → dispatch plan** · *Right ambulance · fastest route*
 
-### 10 · Result: to the patient (15 s)
-- **Clip prompt:** Split screen with two identical dark maps. On the left, a grey ambulance takes a long winding route. On the right, a cyan ambulance takes a direct route and arrives much earlier; its pin turns green. Leave space at the top of each half for clocks.
-- **Voice:** "Tested on real one-oh-eight call data: today, help reaches the patient in twenty-two point six minutes on average. With our routing... nine point eight. That's thirteen minutes sooner."
-- **Overlay:** Left **Current 108 · LIVE DATA · 22.6 min** · Right **Ising-machine routing · SIMULATED · 9.8 min** · badge **13 min sooner (−57%)**
-
-### 11 · Result: into hospital care (15 s)
-- **Clip prompt:** Two horizontal bars of light grow from left to right on a dark background. The top grey bar grows longer; the bottom bar, made of cyan and gold segments, stops noticeably shorter. A soft green glow highlights the gap.
-- **Voice:** "And into hospital care: forty-seven point five minutes, instead of sixty point six. Even after we add thirty minutes of buffer to our own numbers."
-- **Overlay:** **Call → hospital care: 60.6 vs 47.5 min** · badge **13 min sooner (−22%)** · footnote *Current 108: live data. Ising-machine routing: simulation on the same 108 calls, with 15 min at the scene and 15 min handover added to the simulated side only. Not yet deployed live.*
+### 10 · Result: faster turnaround (15 s)
+- **Clip prompt:** Split screen with two identical dark maps. On the left, a grey ambulance takes a long winding route to a patient pin and on to a hospital. On the right, a cyan ambulance takes a direct route and finishes clearly earlier; its hospital glows green. A soft green glow then fills the right half. Leave space in the centre for a large badge.
+- **Voice:** "Tested on real one-oh-eight call data, our routing delivers a sixteen point nine percent faster turnaround time."
+- **Overlay:** Left **Current 108 · LIVE DATA** · Right **Ising-machine routing · SIMULATED** · large centre badge **16.9% faster turnaround time** · footnote *Current 108: live data. Ising-machine routing: simulation on the same 108 call data. Not yet deployed live.*
 
 ### 12 · Roadmap (8 s)
 - **Clip prompt:** Three glowing circular nodes joined by a cyan dotted line on a dark background. The first fills green with a check-mark glow; the line travels on to the second (an ambulance icon) and then the third (police car, fire engine and ambulance together).
@@ -93,7 +88,8 @@ Both logos are **dark blue on a transparent background**. On the dark video scen
 ---
 
 ## Before you export
-- Check the numbers exactly: 22.6 / 9.8 / 60.6 / 47.5 / −57% / −22%.
-- Results screens must keep the "LIVE DATA" and "SIMULATED" labels and the footnote.
-- Listen for the pronunciation of "Kew-bo" (QUBO), "Ising" (EE-sing), "one-oh-eight" and "one-one-two".
+- The only result figure in the video is **16.9% faster turnaround time**. No minutes are shown or spoken.
+- **Confirm the source and definition of 16.9%** (which stages "turnaround" covers, and whether buffers are included). It doesn't match the deck figures we used earlier (−22% call-to-care, −57% to the patient), so make sure it comes from a document you can show if asked.
+- The results screen must keep the "LIVE DATA" and "SIMULATED" labels and the footnote.
+- Listen for the pronunciation of "Kew-bo" (QUBO), "Ising" (EE-sing), "one-oh-eight", "one-one-two" and "sixteen point nine percent".
 - Get Quanfluence's approval for its logo and for the scene 8 wording.
