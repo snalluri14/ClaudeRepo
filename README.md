@@ -6,6 +6,7 @@ Everything Jarvis needs is on this branch. It doesn't need an API key.
 
 | Command | What it does |
 |---|---|
+| `python jarvis.py talk` | **A spoken conversation.** Jarvis greets you with the most important thing right now, then you talk back and forth: "plan my day", "move income tax to Friday", "what's overdue?", "quiz me on pitching". Say **"goodbye"** to end. |
 | `python jarvis.py dump` | Talk freely about your day. Jarvis marks tasks done, adds new ones, moves dates, and journals it. |
 | `python jarvis.py plan` | Jarvis builds today's plan (up to 3 priorities, quick wins, risks), saves it to Notion, and reads it to you. |
 | `python jarvis.py ask` | Ask a question, such as "what's overdue?" or "what's left for the Negen launch?" |
@@ -13,7 +14,9 @@ Everything Jarvis needs is on this branch. It doesn't need an API key.
 | `python jarvis.py coach` | A spoken practice session on your Focus skill: role-plays, timed challenges, scenarios or quizzes, with feedback after every answer. Type `q` to finish and get your score. |
 | `python jarvis.py coach "handling pricing objections"` | A coaching session on a topic you choose. |
 
-Add `--text` to type instead of talking, or `--quiet` for no voice reply.
+**Hands-free turns:** you don't press anything while talking. Jarvis starts listening after it speaks and stops when you pause for 2 seconds. In `talk` and `coach`, say "goodbye", "that's all" or "stop" (or press Ctrl+C) to finish. If you say nothing twice in a row, Jarvis wraps up.
+
+Options: `--text` to type instead of talking, `--manual` to press Enter to start and stop each turn (handy in a noisy room), and `--quiet` for no voice reply.
 
 ## Why it's cheap and private
 
@@ -80,6 +83,8 @@ claude mcp list          # check it now says Connected
 
 If `notion` isn't in the list at all, add it again (step 2) with `--scope user`, so it works from any folder. If you connected Notion on claude.ai instead (Settings → Connectors), that works too. Make sure it shows as connected there and that `claude` is signed in to the same account.
 
+**Jarvis cuts me off, or never stops listening.** Raise `JARVIS_SILENCE_SECONDS` if it stops while you're thinking. If it keeps listening in a noisy room (fan, music, TV), use `--manual`, or a headset mic. Jarvis measures the room's noise during the first half second of each turn, so stay quiet for a moment when "Listening..." appears.
+
 ## Settings
 
 | Variable | Default | Notes |
@@ -87,6 +92,7 @@ If `notion` isn't in the list at all, add it again (step 2) with `--scope user`,
 | `JARVIS_MODEL` | `sonnet` | Use `opus` for deeper planning (uses more of your subscription limit) or `haiku` for speed. |
 | `JARVIS_WHISPER_MODEL` | `base` | `small` is more accurate, and slower on older laptops. |
 | `JARVIS_PIPER_VOICE` | unset | Path to a Piper `.onnx` voice. Without it, the OS voice is used. |
+| `JARVIS_SILENCE_SECONDS` | `2.0` | How long a pause ends your turn. Raise it to `3` if Jarvis cuts you off while you think. |
 
 How Jarvis plans and talks is set in `prompts/jarvis.md`. Edit it freely, for example to allow 5 priorities or add a "health" area.
 
@@ -102,8 +108,8 @@ Windows: in Task Scheduler, create a daily task that runs `python C:\path\to\jar
 
 ## Daily routine
 
-- **Morning:** `plan`, either scheduled or run by hand.
-- **During the day:** a quick `dump` whenever something changes.
+- **Morning:** `plan`, either scheduled or run by hand, or start a `talk` and say "plan my day".
+- **During the day:** a quick `dump` (or `talk`) whenever something changes.
 - **Evening:** a 2-minute `dump` covering what got done, what slipped, and what's new.
 - **2-3 times a week:** a 10-minute `coach` session.
 - **Sunday:** `review`.
