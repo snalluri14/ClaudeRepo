@@ -2,7 +2,7 @@
 
 Jarvis tracks your work and personal tasks in Notion. You talk to it, it updates your tasks, and every morning it plans your day and reads the plan aloud.
 
-This folder is self-contained. It doesn't use the other agents in this repo, or an API key.
+Everything Jarvis needs is on this branch. It doesn't need an API key.
 
 | Command | What it does |
 |---|---|
@@ -41,6 +41,7 @@ Claude may only use the Notion tools. Shell, file-editing and web tools are bloc
 
 3. **Install the voice packages:**
    ```bash
+   git clone -b jarvis-only https://github.com/snalluri14/ClaudeRepo.git jarvis
    cd jarvis
    pip install -r requirements.txt
    ```
@@ -67,9 +68,9 @@ How Jarvis plans and talks is set in `prompts/jarvis.md`. Edit it freely, for ex
 
 macOS or Linux, weekdays at 8:50 (run `crontab -e`):
 ```
-50 8 * * 1-5 cd /path/to/ClaudeRepo/jarvis && /usr/bin/python3 jarvis.py plan >> journal/cron.log 2>&1
+50 8 * * 1-5 cd /path/to/jarvis && /usr/bin/python3 jarvis.py plan >> journal/cron.log 2>&1
 ```
-Windows: in Task Scheduler, create a daily task that runs `python C:\path\to\ClaudeRepo\jarvis\jarvis.py plan`.
+Windows: in Task Scheduler, create a daily task that runs `python C:\path\to\jarvis\jarvis.py plan`.
 
 ## Daily routine
 
