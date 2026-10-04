@@ -1,0 +1,5 @@
+openai-whisper   # local speech-to-text (skip if you already have it or use faster-whisper)
+sounddevice      # microphone recording and playback
+soundfile        # plays Piper's audio
+numpy
+pyttsx3          # offline OS voice (fallback when Piper isn't set up)
