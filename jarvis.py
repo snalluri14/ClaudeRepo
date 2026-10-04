@@ -38,7 +38,9 @@ CLAUDE_MODEL = os.environ.get("JARVIS_MODEL", "sonnet")
 PIPER_VOICE = os.environ.get("JARVIS_PIPER_VOICE")  # path to a Piper .onnx voice file
 
 # Claude may only touch Notion. Everything else is denied for privacy and safety.
-ALLOWED_TOOLS = ["mcp__notion"]
+# "notion" is the server from `claude mcp add`; "claude_ai_Notion" is the Notion
+# connector from your claude.ai account, if you connected it there instead.
+ALLOWED_TOOLS = ["mcp__notion", "mcp__claude_ai_Notion"]
 BLOCKED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch"]
 
 REQUESTS = {

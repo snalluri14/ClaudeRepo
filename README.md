@@ -67,6 +67,19 @@ Jarvis keeps a **Jarvis Growth** database in Notion. Each row is a trainable ski
 
 Suggested rhythm: run `review` on Sunday evening, and run `coach` for 10 minutes 2-3 times a week. Give Jarvis about a week of daily dumps before the first review, since it needs data to spot patterns.
 
+## Troubleshooting
+
+**"I can't reach Notion" or "Notion needs to be authorized".** Claude Code has the Notion server but hasn't been allowed into your Notion account yet. Fix it once:
+
+```bash
+claude mcp list          # notion should say "Connected", not "Needs authentication"
+claude                   # then type /mcp, pick notion, choose Authenticate,
+                         # approve in the browser, and type /exit
+claude mcp list          # check it now says Connected
+```
+
+If `notion` isn't in the list at all, add it again (step 2) with `--scope user`, so it works from any folder. If you connected Notion on claude.ai instead (Settings → Connectors), that works too. Make sure it shows as connected there and that `claude` is signed in to the same account.
+
 ## Settings
 
 | Variable | Default | Notes |
