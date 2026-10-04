@@ -3,6 +3,9 @@
     python jarvis.py dump      # talk about your day; Jarvis updates your Notion tasks
     python jarvis.py plan      # Jarvis builds today's plan and reads it to you
     python jarvis.py ask       # ask anything about your tasks ("what's overdue?")
+    python jarvis.py review    # where you're falling short, with evidence and drills
+    python jarvis.py coach     # a spoken practice session on your weakest area
+    python jarvis.py coach "handling pricing objections"   # or pick the topic
 
 Add --text to type instead of speaking, --quiet to skip the voice reply.
 
@@ -21,6 +24,7 @@ import os
 import shutil
 import subprocess
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -48,20 +52,41 @@ REQUESTS = {
         "in Notion, and give me the spoken briefing."
     ),
     "ask": "Answer my question using my Notion tasks. Change tasks only if I ask you to.",
+    "review": (
+        "Run my growth review. Look at my tasks, daily pages and growth tracker from the "
+        "last 14 days, find where I'm falling short, update the growth tracker, save the "
+        "review page, and give me the spoken review."
+    ),
+    "coach": (
+        "Start a coaching session. Pick my current focus skill from the growth tracker "
+        "(or the topic I name), tell me in one or two sentences what we'll practice and "
+        "why, then give me the first exercise or question and wait for my answer."
+    ),
 }
+COACH_WRAP_UP = (
+    "End the session now. Give me my score for this session, the one thing I did well, "
+    "the one thing to fix, and the drill to practice before next time. Log the session "
+    "in the growth tracker."
+)
+STOP_WORDS = {"q", "quit", "stop", "done", "end", "exit"}
 
 
 # ---------------------------------------------------------------- voice in --
 
-def record() -> "numpy.ndarray":
-    """Record from the default microphone until Enter is pressed."""
+def record(allow_quit: bool = False):
+    """Record from the default microphone until Enter is pressed.
+
+    With allow_quit, typing q (or stop/done) instead of Enter returns None.
+    """
     import numpy as np
     import sounddevice as sd
 
     chunks = []
     stream = sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32",
                             callback=lambda data, *_: chunks.append(data.copy()))
-    input("Press Enter to start talking...")
+    hint = " (or type q to finish)" if allow_quit else ""
+    if input(f"Press Enter to start talking{hint}... ").strip().lower() in STOP_WORDS:
+        return None
     with stream:
         input("Listening. Press Enter when you're done.")
     if not chunks:
@@ -88,32 +113,51 @@ def transcribe(audio) -> str:
 
 
 def get_input(mode: str, typed: bool) -> str:
-    if mode == "plan":
+    if mode in ("plan", "review", "coach"):
         return ""  # nothing to say, Jarvis reads Notion
+    return listen(typed) or ""
+
+
+def listen(typed: bool, allow_quit: bool = False):
+    """One turn of input. Returns None when the user asks to finish."""
     if typed:
-        print("Type your input. Finish with an empty line.")
+        hint = " Type q to finish." if allow_quit else ""
+        print(f"Type your input. Finish with an empty line.{hint}")
         lines = []
         while (line := input()) != "":
             lines.append(line)
-        return "\n".join(lines)
-    text = transcribe(record())
+        text = "\n".join(lines)
+        return None if allow_quit and text.strip().lower() in STOP_WORDS else text
+    audio = record(allow_quit)
+    if audio is None:
+        return None
+    text = transcribe(audio)
     print(f"\nYou said: {text}\n")
     return text
 
 
 # ------------------------------------------------------------------- brain --
 
-def ask_claude(mode: str, said: str) -> str:
+def ask_claude(mode: str, said: str, session: str = None, resume: bool = False) -> str:
+    """Send one message. Pass session to start (or, with resume, continue) a conversation."""
     if not shutil.which("claude"):
         sys.exit("Claude Code isn't installed. See README.md.")
 
-    now = datetime.now()
-    message = f"Now: {now:%A %B %d, %Y %H:%M}.\n\n{REQUESTS[mode]}"
-    if said:
-        message += f"\n\nWhat I said:\n\"\"\"\n{said}\n\"\"\""
+    if resume and said == COACH_WRAP_UP:
+        message = said
+    elif resume:
+        message = f"What I said:\n\"\"\"\n{said}\n\"\"\""
+    else:
+        now = datetime.now()
+        message = f"Now: {now:%A %B %d, %Y %H:%M}.\n\n{REQUESTS[mode]}"
+        if said:
+            label = "Topic I want to practice" if mode == "coach" else "What I said"
+            message += f"\n\n{label}:\n\"\"\"\n{said}\n\"\"\""
 
-    cmd = [
-        "claude", "-p", message,
+    cmd = ["claude", "-p", message]
+    if session:
+        cmd += ["--resume" if resume else "--session-id", session]
+    cmd += [
         "--model", CLAUDE_MODEL,
         "--append-system-prompt-file", str(PROMPT_FILE),
         "--allowedTools", *ALLOWED_TOOLS,
@@ -166,23 +210,41 @@ def log(mode: str, said: str, reply: str):
         f.write(f"**Jarvis:** {reply}\n")
 
 
+def respond(mode: str, said: str, reply: str, quiet: bool):
+    print(f"\nJarvis: {reply}\n")
+    log(mode, said, reply)
+    if not quiet:
+        speak(reply)
+
+
+def coach(topic: str, typed: bool, quiet: bool):
+    """A back-and-forth practice session that keeps context between turns."""
+    session = str(uuid.uuid4())
+    respond("coach", topic, ask_claude("coach", topic, session), quiet)
+    while (said := listen(typed, allow_quit=True)) is not None:
+        if said.strip():
+            respond("coach", said, ask_claude("coach", said, session, resume=True), quiet)
+    respond("coach", "(end of session)",
+            ask_claude("coach", COACH_WRAP_UP, session, resume=True), quiet)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("mode", choices=list(REQUESTS))
+    parser.add_argument("topic", nargs="?", default="", help="coach only: what to practice")
     parser.add_argument("--text", action="store_true", help="type instead of speaking")
     parser.add_argument("--quiet", action="store_true", help="don't speak the reply")
     args = parser.parse_args()
 
-    said = get_input(args.mode, args.text)
-    if args.mode != "plan" and not said.strip():
-        sys.exit("I didn't catch anything. Try again.")
+    if args.mode == "coach":
+        coach(args.topic, args.text, args.quiet)
+        return
 
-    reply = ask_claude(args.mode, said)
-    print(f"\nJarvis: {reply}\n")
-    log(args.mode, said, reply)
-    if not args.quiet:
-        speak(reply)
+    said = get_input(args.mode, args.text)
+    if args.mode in ("dump", "ask") and not said.strip():
+        sys.exit("I didn't catch anything. Try again.")
+    respond(args.mode, said, ask_claude(args.mode, said), args.quiet)
 
 
 if __name__ == "__main__":
